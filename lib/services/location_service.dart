@@ -991,8 +991,7 @@ class LocationService {
       // was found; using a real, distinct Aduana-area Intramuros landmark
       // photo instead of the remote San-Andres image (which is also reused
       // by Baluartillo de San Jose and Baluarte de San Andres below).
-      photo:
-          'assets/intravel/assets/home/intramuros-aduana-area-fallback.jpg',
+      photo: 'assets/intravel/assets/home/intramuros-aduana-area-fallback.jpg',
       area: 'Seafront Complex, southwestern wall',
       history:
           "Baluarillo de San Juan is a small bastion on the southwestern seafront wall of Intramuros, part of the Seafront Complex that defended the city's coastal edge.",
@@ -1232,8 +1231,7 @@ class LocationService {
       // was found (only paid stock photography exists); using a real,
       // distinct Muralla/General Luna corner photo rather than a
       // duplicate.
-      photo:
-          'assets/intravel/assets/home/intramuros-dole-muralla-fallback.jpg',
+      photo: 'assets/intravel/assets/home/intramuros-dole-muralla-fallback.jpg',
       area: 'Victoria Street corner Santa Lucia Street',
       history:
           "The Intramuros and Rizal's Bagumbayan Light and Sound Museum brings Philippine history and the life of Jose Rizal to life through guided audio-visual presentations, narrated journeys, and immersive light shows.",
@@ -1541,8 +1539,7 @@ class LocationService {
       // Stand-in photo: no freely-licensed photo of this specific bastion
       // was found; using a real, distinct General Luna streetscape photo
       // rather than a duplicate of Foro de Intramuros' fallback.
-      photo:
-          'assets/intravel/assets/home/intramuros-general-luna-fallback.jpg',
+      photo: 'assets/intravel/assets/home/intramuros-general-luna-fallback.jpg',
       area: 'Santa Lucia Street, western wall',
       history:
           'Named after St Elizabeth, this "plano" or flat bastion sits on the western wall near Puerta de Santa Lucia. Unlike the pointed ace-of-spades bastions elsewhere on the walls, its platform is level, which is what the name records. In recent years the Intramuros Administration has leased the grounds for public events, including the Department of Tourism\'s Philippine Eatsperience food village, so visitors today usually find it in use as a dining and events space rather than as a bare ruin.',
@@ -2253,8 +2250,7 @@ class LocationService {
         authorName: 'Dianne Cordero',
         authorPhotoUrl: '',
         rating: 5.0,
-        text:
-            "The facade alone tells you a lot about the era it was built in.",
+        text: "The facade alone tells you a lot about the era it was built in.",
         publishedAt: DateTime.now().subtract(const Duration(days: 82)),
       ),
     ],
@@ -2582,8 +2578,7 @@ class LocationService {
         authorName: 'Nica Orozco',
         authorPhotoUrl: '',
         rating: 5.0,
-        text:
-            "The facade alone tells you a lot about the era it was built in.",
+        text: "The facade alone tells you a lot about the era it was built in.",
         publishedAt: DateTime.now().subtract(const Duration(days: 85)),
       ),
     ],
@@ -2629,8 +2624,7 @@ class LocationService {
         authorName: 'Marlon Estacio',
         authorPhotoUrl: '',
         rating: 5.0,
-        text:
-            "The facade alone tells you a lot about the era it was built in.",
+        text: "The facade alone tells you a lot about the era it was built in.",
         publishedAt: DateTime.now().subtract(const Duration(days: 82)),
       ),
     ],
@@ -3381,8 +3375,7 @@ class LocationService {
         authorName: 'Renz Bautista',
         authorPhotoUrl: '',
         rating: 5.0,
-        text:
-            "The facade alone tells you a lot about the era it was built in.",
+        text: "The facade alone tells you a lot about the era it was built in.",
         publishedAt: DateTime.now().subtract(const Duration(days: 81)),
       ),
     ],
@@ -3428,8 +3421,7 @@ class LocationService {
         authorName: 'Ulysses Tanque',
         authorPhotoUrl: '',
         rating: 5.0,
-        text:
-            "The facade alone tells you a lot about the era it was built in.",
+        text: "The facade alone tells you a lot about the era it was built in.",
         publishedAt: DateTime.now().subtract(const Duration(days: 84)),
       ),
     ],
@@ -3475,8 +3467,7 @@ class LocationService {
         authorName: 'Bryan Castillo',
         authorPhotoUrl: '',
         rating: 5.0,
-        text:
-            "The facade alone tells you a lot about the era it was built in.",
+        text: "The facade alone tells you a lot about the era it was built in.",
         publishedAt: DateTime.now().subtract(const Duration(days: 81)),
       ),
     ],
@@ -3569,8 +3560,7 @@ class LocationService {
         authorName: 'Ysabel Zamora',
         authorPhotoUrl: '',
         rating: 5.0,
-        text:
-            "The facade alone tells you a lot about the era it was built in.",
+        text: "The facade alone tells you a lot about the era it was built in.",
         publishedAt: DateTime.now().subtract(const Duration(days: 82)),
       ),
     ],
@@ -3616,8 +3606,7 @@ class LocationService {
         authorName: 'Jerico Villaflor',
         authorPhotoUrl: '',
         rating: 5.0,
-        text:
-            "The facade alone tells you a lot about the era it was built in.",
+        text: "The facade alone tells you a lot about the era it was built in.",
         publishedAt: DateTime.now().subtract(const Duration(days: 84)),
       ),
     ],
@@ -3842,8 +3831,7 @@ class LocationService {
         authorName: 'Aldrin Mercado',
         authorPhotoUrl: '',
         rating: 5.0,
-        text:
-            "A bit pricier than I expected but the ambiance made up for it.",
+        text: "A bit pricier than I expected but the ambiance made up for it.",
         publishedAt: DateTime.now().subtract(const Duration(days: 51)),
       ),
       Review(
@@ -3889,8 +3877,7 @@ class LocationService {
         authorName: 'Rowena Quiambao',
         authorPhotoUrl: '',
         rating: 5.0,
-        text:
-            "A bit pricier than I expected but the ambiance made up for it.",
+        text: "A bit pricier than I expected but the ambiance made up for it.",
         publishedAt: DateTime.now().subtract(const Duration(days: 52)),
       ),
       Review(
@@ -3936,8 +3923,7 @@ class LocationService {
         authorName: 'Ysabel Zamora',
         authorPhotoUrl: '',
         rating: 5.0,
-        text:
-            "A bit pricier than I expected but the ambiance made up for it.",
+        text: "A bit pricier than I expected but the ambiance made up for it.",
         publishedAt: DateTime.now().subtract(const Duration(days: 48)),
       ),
       Review(
@@ -4399,6 +4385,108 @@ class LocationService {
             description: 'Wheelchair accessible main entrance',
             type: AccessibilityType.ramps,
             location: LatLng(14.5914, 120.9736),
+          ),
+        ],
+
+        // ─── Section 6 additions: non-Cafe accessibility pins ────────────
+        // Placed at the coordinates of already-verified _RawSite entries
+        // (each cross-checked against OSM elsewhere in this file) rather
+        // than invented offsets, per Section 1's "no guessing coordinates"
+        // rule — every pin below is guaranteed inside the verified
+        // Intramuros boundary because it reuses a real site's own pin.
+        // Placement follows realistic patterns for each feature type
+        // (spec Section 6.3): rest areas at plazas/gardens, braille
+        // signage at museums/historical markers, step-free priority
+        // access at gates/riverside walks, rough-terrain warnings at the
+        // older cobblestone fortification approaches.
+        'plaza-roma': [
+          const AccessibilityFeature(
+            id: 'af7',
+            name: 'Rest Area',
+            description: 'Shaded benches around the plaza',
+            type: AccessibilityType.restAreas,
+            location: LatLng(14.5922, 120.9731),
+          ),
+        ],
+        'baluarte-de-san-diego-gardens': [
+          const AccessibilityFeature(
+            id: 'af8',
+            name: 'Rest Area',
+            description: 'Garden seating beside the bastion',
+            type: AccessibilityType.restAreas,
+            location: LatLng(14.5859, 120.9757),
+          ),
+        ],
+        'plaza-san-luis-complex': [
+          const AccessibilityFeature(
+            id: 'af9',
+            name: 'Rest Area',
+            description: 'Seating along the heritage streetscape',
+            type: AccessibilityType.restAreas,
+            location: LatLng(14.5897, 120.9754),
+          ),
+        ],
+        'museo-de-intramuros': [
+          const AccessibilityFeature(
+            id: 'af10',
+            name: 'Braille Signage',
+            description: 'Braille signage available at the entrance',
+            type: AccessibilityType.brailleVoice,
+            location: LatLng(14.5899, 120.9732),
+          ),
+        ],
+        'bahay-tsinoy': [
+          const AccessibilityFeature(
+            id: 'af11',
+            name: 'Braille Signage',
+            description: 'Braille signage available at the entrance',
+            type: AccessibilityType.brailleVoice,
+            location: LatLng(14.5909, 120.9750),
+          ),
+        ],
+        'casa-manila-museum': [
+          const AccessibilityFeature(
+            id: 'af12',
+            name: 'PWD & Senior Priority Access',
+            description: 'Step-free entrance with priority assistance',
+            type: AccessibilityType.pwdSeniorPriority,
+            location: LatLng(14.5897, 120.9752),
+          ),
+        ],
+        'puerta-real-gardens': [
+          const AccessibilityFeature(
+            id: 'af13',
+            name: 'PWD & Senior Priority Access',
+            description: 'Step-free approach through the gardens',
+            type: AccessibilityType.pwdSeniorPriority,
+            location: LatLng(14.5859, 120.9771),
+          ),
+        ],
+        'fort-santiago-riverwalk': [
+          const AccessibilityFeature(
+            id: 'af14',
+            name: 'PWD & Senior Priority Access',
+            description: 'Level riverside path, priority assistance nearby',
+            type: AccessibilityType.pwdSeniorPriority,
+            location: LatLng(14.5949, 120.9710),
+          ),
+        ],
+        'baluarte-de-san-diego': [
+          const AccessibilityFeature(
+            id: 'af15',
+            name: 'Bumpy Road Ahead',
+            description: 'Uneven cobblestone approach to the bastion',
+            type: AccessibilityType.roughTerrain,
+            location: LatLng(14.5854, 120.9756),
+          ),
+        ],
+        'plaza-de-armas': [
+          const AccessibilityFeature(
+            id: 'af16',
+            name: 'Bumpy Road Ahead',
+            description: 'Uneven cobblestone surface inside the fort',
+            type: AccessibilityType.roughTerrain,
+            location: LatLng(14.5945, 120.9701),
           ),
         ],
       };

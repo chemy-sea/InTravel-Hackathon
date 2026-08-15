@@ -446,9 +446,15 @@ class _SavedCard extends StatelessWidget {
               padding: const EdgeInsets.only(right: 13),
               child: GestureDetector(
                 onTap: () => SavedPlacesService.instance.toggle(location.id),
-                child: const Text(
-                  '♥',
-                  style: TextStyle(color: Color(0xFFEC535C), fontSize: 21),
+                // Bookmark icon (spec Section 5), matching the save
+                // affordance already used everywhere else it appears
+                // (LocationDetailsScreen's app-bar and "Save" action row)
+                // instead of the previous heart glyph, which was this
+                // screen's own inconsistent one-off.
+                child: Icon(
+                  Icons.bookmark_rounded,
+                  color: colors.forest,
+                  size: 22,
                 ),
               ),
             ),

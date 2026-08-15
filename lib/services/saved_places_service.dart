@@ -2,22 +2,22 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Persists the set of saved (bookmarked) location IDs, mirroring the
-/// Eunice-branch `intravel.saved-places.v1` localStorage key and default
-/// seed places (Fort Santiago, Museo de Intramuros, Palacio del Gobernador,
-/// Ayuntamiento de Manila).
+/// Eunice-branch `intravel.saved-places.v1` localStorage key.
+///
+/// Deliberately starts empty and stays empty until the user explicitly
+/// saves something (spec Section 5) — an earlier version seeded four
+/// locations (Fort Santiago, Museo de Intramuros, Palacio del Gobernador,
+/// Ayuntamiento de Manila) into the in-memory set before [load] ever ran,
+/// so on a fresh install (nothing in SharedPreferences yet) those four
+/// showed as saved without the user tapping anything. No default seeding
+/// happens anymore.
 class SavedPlacesService extends ChangeNotifier {
   static final SavedPlacesService instance = SavedPlacesService._internal();
   SavedPlacesService._internal();
 
   static const String _storageKey = 'intravel.saved-places.v1';
-  static const List<String> defaultSavedIds = [
-    'fort-santiago',
-    'museo-de-intramuros',
-    'palacio-del-gobernador',
-    'ayuntamiento-de-manila',
-  ];
 
-  Set<String> _savedIds = {...defaultSavedIds};
+  Set<String> _savedIds = {};
   bool _isLoaded = false;
 
   Set<String> get savedIds => _savedIds;

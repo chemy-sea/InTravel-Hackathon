@@ -116,6 +116,17 @@ class _NavigationScreenState extends State<NavigationScreen> {
   // defaults to active like the other modes above.
   bool _cafeMode = true;
 
+  /// The accessibility pin whose small dismissible note (spec Section 6)
+  /// is currently showing, or `null` when none is open. Only one note is
+  /// shown at a time — tapping a different pin replaces it rather than
+  /// stacking notes.
+  AccessibilityFeature? _activeAccessibilityNote;
+
+  /// Screen-space anchor for [_activeAccessibilityNote], resolved once via
+  /// `GoogleMapController.getScreenCoordinate` when the pin is tapped.
+  /// `null` while that lookup is in flight or when no note is showing.
+  Offset? _activeAccessibilityNoteAnchor;
+
   final List<_LiveUpdate> _liveUpdates = [];
 
   /// The fixed anchor the active route line and off-route detection are
@@ -553,6 +564,11 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
   /// Suspends follow mode the first time the user drags or pinches the map.
   void _onCameraMoveStarted() {
+    // A camera move invalidates the accessibility note's screen anchor
+    // (spec Section 6: the note is tied to where the pin *was* on screen,
+    // not a world coordinate that gets re-projected every frame) — close
+    // it rather than let it drift away from its pin.
+    _dismissAccessibilityNote();
     if (!_cameraMoveIsUserGesture) return;
     if (_userHasPannedMap) return;
     setState(() => _userHasPannedMap = true);
@@ -1061,7 +1077,45 @@ class _NavigationScreenState extends State<NavigationScreen> {
         markers.add(_locationPinMarker(site, _getCafeMarkerHue()));
       }
     }
+    // Accessibility pins for every non-Cafe mode (spec Section 6),
+    // catalogue-wide rather than scoped to a single nav target the way
+    // the [_navTarget!.accessibilityFeatures] loop above is. Cafe is
+    // excluded (it already has its own pin system via
+    // [_cafeFilteredLocations]/full-detail dialog above) and each pin's
+    // `onTap` shows a small dismissible note ([_showAccessibilityNote])
+    // instead of opening a full detail dialog.
+    if (_isBrowseMode) {
+      for (final feature in _browseAccessibilityFeatures) {
+        markers.add(
+          Marker(
+            markerId: MarkerId('a11y-${feature.id}'),
+            position: feature.location!,
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+              _getMarkerHue(feature.type),
+            ),
+            onTap: () => _showAccessibilityNote(feature),
+          ),
+        );
+      }
+    }
     return markers;
+  }
+
+  /// Every catalogue-wide [AccessibilityFeature] eligible for a browse-mode
+  /// pin (spec Section 6): has a real [AccessibilityFeature.location], is
+  /// not [AccessibilityType.cafe] (which has its own dedicated pin system),
+  /// and its mode is currently active per [_isModeActive].
+  List<AccessibilityFeature> get _browseAccessibilityFeatures {
+    final features = <AccessibilityFeature>[];
+    for (final site in LocationService().getAllLocations()) {
+      for (final feature in site.accessibilityFeatures) {
+        if (feature.location == null) continue;
+        if (feature.type == AccessibilityType.cafe) continue;
+        if (!_isModeActive(feature.type)) continue;
+        features.add(feature);
+      }
+    }
+    return features;
   }
 
   /// Independent Cafe pin filter (addendum spec 3 Section 2.1): returns
@@ -1320,12 +1374,50 @@ class _NavigationScreenState extends State<NavigationScreen> {
       case AccessibilityType.vegetarian:
         return BitmapDescriptor.hueGreen;
       case AccessibilityType.ramps:
+      case AccessibilityType.pwdSeniorPriority:
         return BitmapDescriptor.hueViolet;
       case AccessibilityType.brailleVoice:
         return BitmapDescriptor.hueOrange;
+      case AccessibilityType.restAreas:
+        return BitmapDescriptor.hueCyan;
+      case AccessibilityType.roughTerrain:
+        return BitmapDescriptor.hueYellow;
       default:
         return BitmapDescriptor.hueRed;
     }
+  }
+
+  /// Shows a small dismissible note above the tapped accessibility pin
+  /// (spec Section 6) — not a full detail card, and no photo — describing
+  /// the relevant feature (e.g. "Bumpy road ahead," "Braille signage
+  /// available," "Rest area"). Resolves the pin's on-screen position via
+  /// `getScreenCoordinate` (a one-off async lookup at tap time, not a
+  /// continuous per-camera-move conversion, so it doesn't hit the
+  /// staleness problem that ruled out screen-coordinate anchoring for the
+  /// heavier "View details" dialog elsewhere in this file).
+  Future<void> _showAccessibilityNote(AccessibilityFeature feature) async {
+    final controller = _mapController;
+    final location = feature.location;
+    if (controller == null || location == null) return;
+    final screenPoint = await controller.getScreenCoordinate(location);
+    if (!mounted) return;
+    setState(() {
+      _activeAccessibilityNote = feature;
+      _activeAccessibilityNoteAnchor = Offset(
+        screenPoint.x.toDouble(),
+        screenPoint.y.toDouble(),
+      );
+    });
+  }
+
+  /// Dismisses the currently-showing accessibility note, if any (spec
+  /// Section 6: "tap elsewhere to close"). Safe to call unconditionally.
+  void _dismissAccessibilityNote() {
+    if (_activeAccessibilityNote == null) return;
+    setState(() {
+      _activeAccessibilityNote = null;
+      _activeAccessibilityNoteAnchor = null;
+    });
   }
 
   double? get _distanceMeters {
@@ -1780,8 +1872,20 @@ class _NavigationScreenState extends State<NavigationScreen> {
                   mapToolbarEnabled: false,
                   onCameraMoveStarted: _onCameraMoveStarted,
                   onMapCreated: (c) => _mapController = c,
+                  // Tapping the bare map (not a pin) dismisses an open
+                  // accessibility note (spec Section 6: "tap elsewhere to
+                  // close").
+                  onTap: (_) => _dismissAccessibilityNote(),
                 ),
               ),
+              if (_activeAccessibilityNote != null &&
+                  _activeAccessibilityNoteAnchor != null)
+                _AccessibilityNoteBubble(
+                  colors: colors,
+                  feature: _activeAccessibilityNote!,
+                  anchor: _activeAccessibilityNoteAnchor!,
+                  onDismiss: _dismissAccessibilityNote,
+                ),
               // Bottom-right floating control stack. The re-center button
               // sits above the satellite toggle per improvement-batch spec
               // Section 4.3 ("above other floating controls"), and only
@@ -3202,6 +3306,127 @@ class _AccessibilityModeButton extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Small dismissible note shown above a tapped accessibility pin (spec
+/// Section 6) — deliberately lightweight (icon + name + short
+/// description, no photo, no "View details" action) rather than the full
+/// centered `Dialog` used elsewhere for named location pins. Positioned
+/// directly above [anchor] (the pin's resolved screen coordinate at tap
+/// time), clamped so it can't run off the top/sides of the map.
+class _AccessibilityNoteBubble extends StatelessWidget {
+  final AppColors colors;
+  final AccessibilityFeature feature;
+  final Offset anchor;
+  final VoidCallback onDismiss;
+
+  static const double _bubbleWidth = 220;
+  static const double _bubbleHeight = 76;
+
+  const _AccessibilityNoteBubble({
+    required this.colors,
+    required this.feature,
+    required this.anchor,
+    required this.onDismiss,
+  });
+
+  IconData get _icon {
+    switch (feature.type) {
+      case AccessibilityType.restAreas:
+        return Icons.chair_alt_rounded;
+      case AccessibilityType.brailleVoice:
+        return Icons.accessibility_new_rounded;
+      case AccessibilityType.pwdSeniorPriority:
+      case AccessibilityType.ramps:
+      case AccessibilityType.elevators:
+        return Icons.accessible_rounded;
+      case AccessibilityType.roughTerrain:
+        return Icons.warning_amber_rounded;
+      case AccessibilityType.vegetarian:
+        return Icons.eco_rounded;
+      case AccessibilityType.restroom:
+        return Icons.wc_rounded;
+      case AccessibilityType.parking:
+        return Icons.local_parking_rounded;
+      case AccessibilityType.cafe:
+        return Icons.local_cafe_rounded;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mapSize = MediaQuery.of(context).size;
+    // Centered above the pin, clamped to stay fully on screen — a pin near
+    // an edge would otherwise push the note off it.
+    final left = (anchor.dx - _bubbleWidth / 2).clamp(
+      12.0,
+      mapSize.width - _bubbleWidth - 12,
+    );
+    final top = (anchor.dy - _bubbleHeight - 16).clamp(
+      12.0,
+      mapSize.height - _bubbleHeight - 12,
+    );
+    return Positioned(
+      left: left,
+      top: top,
+      width: _bubbleWidth,
+      child: GestureDetector(
+        // Swallows taps so tapping the note itself doesn't fall through
+        // to the map's own onTap (which would immediately dismiss it).
+        onTap: () {},
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: colors.card,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(_icon, color: colors.forest, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      feature.name,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: colors.ink,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      feature.description,
+                      style: TextStyle(fontSize: 11, color: colors.muted),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              GestureDetector(
+                onTap: onDismiss,
+                child: Icon(Icons.close_rounded, size: 16, color: colors.muted),
+              ),
+            ],
+          ),
         ),
       ),
     );
