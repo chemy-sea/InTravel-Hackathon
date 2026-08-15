@@ -153,11 +153,10 @@ class LocationService {
       photo: 'assets/intravel/assets/home/ia-fort-riverwalk.jpg',
       area: 'Fort Santiago river side',
       history:
-          'Opened in 2025, the Fort Santiago Riverwalk opens the riverside walls of Fort Santiago and connects visitors toward the Pasig River Esplanade.',
+          'Opened in 2025, the Fort Santiago Riverwalk opens the riverside walls of Fort Santiago along the Pasig.',
       highlights: [
         'Views toward the Pasig River',
         'Fort walls from the river side',
-        'A walking connection toward the esplanade',
       ],
       visitNote:
           'Use designated paths and observe on-site safety guidance, especially after rain or during maintenance.',
@@ -165,41 +164,15 @@ class LocationService {
       // 120.97101. The previous value was north of the south bank, i.e.
       // in the Pasig itself.
       coordinates: const LatLng(14.5949, 120.9710),
-      relatedPlaceIds: [
-        'fort-santiago',
-        'pasig-river-esplanade',
-        'plaza-moriones',
-      ],
+      relatedPlaceIds: ['fort-santiago', 'plaza-moriones'],
     ),
-    _RawSite(
-      id: 'pasig-river-esplanade',
-      budgetRange: const BudgetRange(min: 20, max: 70),
-      name: 'Pasig River Esplanade',
-      category: 'Parks',
-      type: 'Promenade',
-      note: 'Riverside public walk',
-      access: 'Free',
-      photo: 'assets/intravel/assets/home/ia-pasig-esplanade.jpg',
-      area: 'Pasig River waterfront',
-      history:
-          "The Pasig River Esplanade is a public riverfront promenade that reconnects people with Manila's historic waterway and reaches toward the Intramuros side of the river.",
-      highlights: [
-        'River and city views',
-        'Public promenade space',
-        'Connection toward Fort Santiago',
-      ],
-      visitNote:
-          'This is an outdoor public space. Check weather, closures, and local advisories before visiting.',
-      // OSM way 1336921368 "Esplanade - Intramuros": 14.59502, 120.97623
-      // — the Intramuros-side stretch of the riverwalk. The previous value
-      // was in the middle of the Pasig.
-      coordinates: const LatLng(14.5950, 120.9762),
-      relatedPlaceIds: [
-        'fort-santiago-riverwalk',
-        'fort-santiago',
-        'plaza-moriones',
-      ],
-    ),
+    // 'Pasig River Esplanade' was removed here (POI Boundary Audit):
+    // it sits riverside, north of the verified Intramuros wall boundary
+    // (see docs/intramuros-boundary.md), so it was already dropped from
+    // assets/data/pois.json — this _RawSite entry was a separate,
+    // independent duplicate in the app's main location catalog that the
+    // original audit missed. Do not re-add it; it's outside the walls
+    // for real, not by a coordinate error.
     _RawSite(
       id: 'casa-manila-museum',
       budgetRange: const BudgetRange(min: 50, max: 75),
@@ -991,8 +964,7 @@ class LocationService {
       // was found; using a real, distinct Aduana-area Intramuros landmark
       // photo instead of the remote San-Andres image (which is also reused
       // by Baluartillo de San Jose and Baluarte de San Andres below).
-      photo:
-          'assets/intravel/assets/home/intramuros-aduana-area-fallback.jpg',
+      photo: 'assets/intravel/assets/home/intramuros-aduana-area-fallback.jpg',
       area: 'Seafront Complex, southwestern wall',
       history:
           "Baluarillo de San Juan is a small bastion on the southwestern seafront wall of Intramuros, part of the Seafront Complex that defended the city's coastal edge.",
@@ -1232,8 +1204,7 @@ class LocationService {
       // was found (only paid stock photography exists); using a real,
       // distinct Muralla/General Luna corner photo rather than a
       // duplicate.
-      photo:
-          'assets/intravel/assets/home/intramuros-dole-muralla-fallback.jpg',
+      photo: 'assets/intravel/assets/home/intramuros-dole-muralla-fallback.jpg',
       area: 'Victoria Street corner Santa Lucia Street',
       history:
           "The Intramuros and Rizal's Bagumbayan Light and Sound Museum brings Philippine history and the life of Jose Rizal to life through guided audio-visual presentations, narrated journeys, and immersive light shows.",
@@ -1541,8 +1512,7 @@ class LocationService {
       // Stand-in photo: no freely-licensed photo of this specific bastion
       // was found; using a real, distinct General Luna streetscape photo
       // rather than a duplicate of Foro de Intramuros' fallback.
-      photo:
-          'assets/intravel/assets/home/intramuros-general-luna-fallback.jpg',
+      photo: 'assets/intravel/assets/home/intramuros-general-luna-fallback.jpg',
       area: 'Santa Lucia Street, western wall',
       history:
           'Named after St Elizabeth, this "plano" or flat bastion sits on the western wall near Puerta de Santa Lucia. Unlike the pointed ace-of-spades bastions elsewhere on the walls, its platform is level, which is what the name records. In recent years the Intramuros Administration has leased the grounds for public events, including the Department of Tourism\'s Philippine Eatsperience food village, so visitors today usually find it in use as a dining and events space rather than as a bare ruin.',
@@ -1771,16 +1741,12 @@ class LocationService {
         'Opens directly onto the Pasig River frontage',
       ],
       visitNote:
-          'Open riverside space with little shade — best in the late afternoon. It connects to the Pasig River Esplanade walk along the same bank.',
+          'Open riverside space with little shade — best in the late afternoon.',
       // OSM relation 18378284 "Plaza Mexico" (leisure=park): 14.59463,
       // 120.97470. Sits on the riverside strip north of the wall line, which
       // is where the real plaza is — still inside Intramuros district.
       coordinates: const LatLng(14.5946, 120.9747),
-      relatedPlaceIds: [
-        'pasig-river-esplanade',
-        'puerta-isabel-ii',
-        'aduana-intendencia',
-      ],
+      relatedPlaceIds: ['puerta-isabel-ii', 'aduana-intendencia'],
     ),
   ];
 
@@ -1825,6 +1791,15 @@ class LocationService {
             'Great place to learn about Philippine history. The fort has a somber but beautiful atmosphere. Bring water as it can get hot during midday.',
         publishedAt: DateTime.now().subtract(const Duration(days: 60)),
       ),
+      Review(
+        id: 'gen-fort-santiago-0',
+        authorName: 'Marlon Estacio',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "The stonework here has survived centuries of weather and war, that alone makes it worth the short detour.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 71)),
+      ),
     ],
     'san-agustin-church': [
       Review(
@@ -1844,6 +1819,33 @@ class LocationService {
         text:
             'Beautiful church with rich history. The museum attached has interesting artifacts from the colonial era. Worth the entrance fee.',
         publishedAt: DateTime.now().subtract(const Duration(days: 21)),
+      ),
+      Review(
+        id: 'gen-san-agustin-church-0',
+        authorName: 'Vanessa Uy',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "The interior is breathtaking, definitely worth timing your visit around a quiet hour to appreciate it.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 73)),
+      ),
+      Review(
+        id: 'gen-san-agustin-church-1',
+        authorName: 'Wendell Yabut',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "We happened to catch a mass in progress, the choir echoing through the nave was unforgettable.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 85)),
+      ),
+      Review(
+        id: 'gen-san-agustin-church-2',
+        authorName: 'Zenaida Abel',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Beautiful architecture but do dress modestly, they do enforce it at the door.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 93)),
       ),
     ],
     'manila-cathedral': [
@@ -1865,6 +1867,33 @@ class LocationService {
             'One of the most beautiful churches in the Philippines. The pipe organ concerts are a unique experience. Highly recommend visiting during mass.',
         publishedAt: DateTime.now().subtract(const Duration(days: 14)),
       ),
+      Review(
+        id: 'gen-manila-cathedral-0',
+        authorName: 'Ricky Talavera',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "The interior is breathtaking, definitely worth timing your visit around a quiet hour to appreciate it.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 73)),
+      ),
+      Review(
+        id: 'gen-manila-cathedral-1',
+        authorName: 'Sofia Umali',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "We happened to catch a mass in progress, the choir echoing through the nave was unforgettable.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 84)),
+      ),
+      Review(
+        id: 'gen-manila-cathedral-2',
+        authorName: 'Tomas Villar',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Beautiful architecture but do dress modestly, they do enforce it at the door.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 96)),
+      ),
     ],
     'casa-manila-museum': [
       Review(
@@ -1876,6 +1905,42 @@ class LocationService {
             'Stepping into Casa Manila feels like time travel. The period furniture and courtyard are gorgeous, great for photos.',
         publishedAt: DateTime.now().subtract(const Duration(days: 21)),
       ),
+      Review(
+        id: 'gen-casa-manila-museum-0',
+        authorName: 'Zenaida Abel',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Well-curated exhibits, the staff were happy to answer questions about the pieces on display.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 74)),
+      ),
+      Review(
+        id: 'gen-casa-manila-museum-1',
+        authorName: 'Bryan Castillo',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Smaller than I expected but every room had something genuinely interesting.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 84)),
+      ),
+      Review(
+        id: 'gen-casa-manila-museum-2',
+        authorName: 'Cherie Domingo',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Air-conditioned, which was a welcome break from walking around Intramuros in the heat.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 92)),
+      ),
+      Review(
+        id: 'gen-casa-manila-museum-3',
+        authorName: 'Elijah Fajardo',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "The collection tells a clear story, easy to follow even without a guide.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 104)),
+      ),
     ],
     'museo-de-intramuros': [
       Review(
@@ -1886,6 +1951,42 @@ class LocationService {
         text:
             'Impressive ecclesiastical art collection housed in a beautifully reconstructed building. Well worth the admission.',
         publishedAt: DateTime.now().subtract(const Duration(days: 30)),
+      ),
+      Review(
+        id: 'gen-museo-de-intramuros-0',
+        authorName: 'Grace Hilario',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Well-curated exhibits, the staff were happy to answer questions about the pieces on display.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 71)),
+      ),
+      Review(
+        id: 'gen-museo-de-intramuros-1',
+        authorName: 'Ivan Javier',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Smaller than I expected but every room had something genuinely interesting.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 84)),
+      ),
+      Review(
+        id: 'gen-museo-de-intramuros-2',
+        authorName: 'Joyce Katigbak',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Air-conditioned, which was a welcome break from walking around Intramuros in the heat.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 92)),
+      ),
+      Review(
+        id: 'gen-museo-de-intramuros-3',
+        authorName: 'Leo Manalastas',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "The collection tells a clear story, easy to follow even without a guide.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 104)),
       ),
     ],
     'baluarte-de-san-diego': [
@@ -1916,6 +2017,24 @@ class LocationService {
             'We had our prenup shoot here and the caretakers were so accommodating. The archaeological layout is genuinely interesting even if you are not into photography.',
         publishedAt: DateTime.now().subtract(const Duration(days: 60)),
       ),
+      Review(
+        id: 'gen-baluarte-de-san-diego-0',
+        authorName: 'Grace Hilario',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "The stonework here has survived centuries of weather and war, that alone makes it worth the short detour.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 74)),
+      ),
+      Review(
+        id: 'gen-baluarte-de-san-diego-1',
+        authorName: 'Ivan Javier',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Quiet corner of the walls, hardly any other tourists when we passed by mid-morning.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 84)),
+      ),
     ],
     'museo-ni-rizal': [
       Review(
@@ -1945,6 +2064,24 @@ class LocationService {
             'Required visit for anyone who took up Rizal in school. Seeing his actual handwriting in the exhibited letters made the textbook version of him feel like a real person.',
         publishedAt: DateTime.now().subtract(const Duration(days: 30)),
       ),
+      Review(
+        id: 'gen-museo-ni-rizal-0',
+        authorName: 'Tomas Villar',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Well-curated exhibits, the staff were happy to answer questions about the pieces on display.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 72)),
+      ),
+      Review(
+        id: 'gen-museo-ni-rizal-1',
+        authorName: 'Ysabel Zamora',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Smaller than I expected but every room had something genuinely interesting.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 85)),
+      ),
     ],
     'fort-santiago-riverwalk': [
       Review(
@@ -1971,37 +2108,26 @@ class LocationService {
         authorPhotoUrl: '',
         rating: 5.0,
         text:
-            'Loved that this connects straight to the esplanade for a longer walk. Felt safe, well-lit in the early evening, and much less crowded than the main fort entrance.',
+            'Loved the extra riverside stretch for a longer walk. Felt safe, well-lit in the early evening, and much less crowded than the main fort entrance.',
         publishedAt: DateTime.now().subtract(const Duration(days: 30)),
       ),
-    ],
-    'pasig-river-esplanade': [
       Review(
-        id: 'r14a',
-        authorName: 'Ariel Buenaventura',
+        id: 'gen-fort-santiago-riverwalk-0',
+        authorName: 'Aldrin Mercado',
         authorPhotoUrl: '',
         rating: 4.0,
         text:
-            'Great for a morning jog before the heat kicks in. Wide enough for joggers and cyclists to share without bumping into each other.',
-        publishedAt: DateTime.now().subtract(const Duration(days: 7)),
+            "Nice shaded benches, good place to rest between walking the rest of Intramuros.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 71)),
       ),
       Review(
-        id: 'r14b',
-        authorName: 'Cherry Domingo',
-        authorPhotoUrl: '',
-        rating: 4.0,
-        text:
-            'Underrated spot for river views of Manila. Bring your own water though, there are not a lot of vendors along this particular stretch yet.',
-        publishedAt: DateTime.now().subtract(const Duration(days: 21)),
-      ),
-      Review(
-        id: 'r14c',
-        authorName: 'Boyet Salonga',
+        id: 'gen-fort-santiago-riverwalk-1',
+        authorName: 'Fely Navarro',
         authorPhotoUrl: '',
         rating: 5.0,
         text:
-            'It is wild that this used to be an inaccessible industrial edge of the river. Now it is one of the calmest places in the whole walled city to just sit and watch the boats.',
-        publishedAt: DateTime.now().subtract(const Duration(days: 60)),
+            "Well-maintained landscaping, someone is clearly taking care of the grounds here.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 81)),
       ),
     ],
     'plaza-san-luis-complex': [
@@ -2032,6 +2158,23 @@ class LocationService {
             'This is the most Instagrammable corner of Intramuros in my opinion, and I have been to most of it. Go early before the tour groups arrive.',
         publishedAt: DateTime.now().subtract(const Duration(days: 42)),
       ),
+      Review(
+        id: 'gen-plaza-san-luis-complex-0',
+        authorName: 'Renz Bautista',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Interesting building to look at from the outside even if you can't go in.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 71)),
+      ),
+      Review(
+        id: 'gen-plaza-san-luis-complex-1',
+        authorName: 'Dianne Cordero',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text: "The facade alone tells you a lot about the era it was built in.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 82)),
+      ),
     ],
     'centro-de-turismo-intramuros': [
       Review(
@@ -2060,6 +2203,24 @@ class LocationService {
         text:
             'Newer venue so it is not as crowded yet. Worth checking their cultural programme schedule before visiting since there are sometimes live demonstrations.',
         publishedAt: DateTime.now().subtract(const Duration(days: 35)),
+      ),
+      Review(
+        id: 'gen-centro-de-turismo-intramuros-0',
+        authorName: 'Dianne Cordero',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Well-curated exhibits, the staff were happy to answer questions about the pieces on display.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 70)),
+      ),
+      Review(
+        id: 'gen-centro-de-turismo-intramuros-1',
+        authorName: 'Marlon Estacio',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Smaller than I expected but every room had something genuinely interesting.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 81)),
       ),
     ],
     'baluarte-de-san-diego-gardens': [
@@ -2090,6 +2251,24 @@ class LocationService {
             'The trees here are old and give real shade, unlike a lot of the more exposed plazas in Intramuros. Underrated picnic spot honestly.',
         publishedAt: DateTime.now().subtract(const Duration(days: 60)),
       ),
+      Review(
+        id: 'gen-baluarte-de-san-diego-gardens-0',
+        authorName: 'Leo Manalastas',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Nice shaded benches, good place to rest between walking the rest of Intramuros.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 70)),
+      ),
+      Review(
+        id: 'gen-baluarte-de-san-diego-gardens-1',
+        authorName: 'Nica Orozco',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Well-maintained landscaping, someone is clearly taking care of the grounds here.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 82)),
+      ),
     ],
     'san-agustin-museum': [
       Review(
@@ -2118,6 +2297,24 @@ class LocationService {
         text:
             'Dim lighting in some galleries which protects the artifacts but makes photos hard without a good camera. Still one of the better-curated religious museums in Manila.',
         publishedAt: DateTime.now().subtract(const Duration(days: 30)),
+      ),
+      Review(
+        id: 'gen-san-agustin-museum-0',
+        authorName: 'Sofia Umali',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Well-curated exhibits, the staff were happy to answer questions about the pieces on display.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 74)),
+      ),
+      Review(
+        id: 'gen-san-agustin-museum-1',
+        authorName: 'Tomas Villar',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Smaller than I expected but every room had something genuinely interesting.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 81)),
       ),
     ],
     'bahay-tsinoy': [
@@ -2148,6 +2345,24 @@ class LocationService {
             'A bit out of the way compared to the other Intramuros stops but absolutely worth the extra walk. Wish more schools brought field trips here.',
         publishedAt: DateTime.now().subtract(const Duration(days: 35)),
       ),
+      Review(
+        id: 'gen-bahay-tsinoy-0',
+        authorName: 'Sofia Umali',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Well-curated exhibits, the staff were happy to answer questions about the pieces on display.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 73)),
+      ),
+      Review(
+        id: 'gen-bahay-tsinoy-1',
+        authorName: 'Tomas Villar',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Smaller than I expected but every room had something genuinely interesting.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 84)),
+      ),
     ],
     'destileria-limtuaco-museum': [
       Review(
@@ -2176,6 +2391,24 @@ class LocationService {
         text:
             'Loved the family archive photos going back five generations. Book the guided tour and tasting combo if it is available, staff know a lot of trivia that is not on the placards.',
         publishedAt: DateTime.now().subtract(const Duration(days: 42)),
+      ),
+      Review(
+        id: 'gen-destileria-limtuaco-museum-0',
+        authorName: 'Dianne Cordero',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Well-curated exhibits, the staff were happy to answer questions about the pieces on display.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 70)),
+      ),
+      Review(
+        id: 'gen-destileria-limtuaco-museum-1',
+        authorName: 'Marlon Estacio',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Smaller than I expected but every room had something genuinely interesting.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 83)),
       ),
     ],
     'plaza-roma': [
@@ -2206,6 +2439,24 @@ class LocationService {
             'Free, open, and shaded enough to just sit for a while between museum visits. Great starting point if you are planning your walking route for the day.',
         publishedAt: DateTime.now().subtract(const Duration(days: 30)),
       ),
+      Review(
+        id: 'gen-plaza-roma-0',
+        authorName: 'Cherie Domingo',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Nice shaded benches, good place to rest between walking the rest of Intramuros.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 70)),
+      ),
+      Review(
+        id: 'gen-plaza-roma-1',
+        authorName: 'Elijah Fajardo',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Well-maintained landscaping, someone is clearly taking care of the grounds here.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 85)),
+      ),
     ],
     'ayuntamiento-de-manila': [
       Review(
@@ -2234,6 +2485,23 @@ class LocationService {
         text:
             'Mostly worth it for the historical context of colonial Manila governance. Not much to actually do here besides admire the exterior.',
         publishedAt: DateTime.now().subtract(const Duration(days: 60)),
+      ),
+      Review(
+        id: 'gen-ayuntamiento-de-manila-0',
+        authorName: 'Leo Manalastas',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Interesting building to look at from the outside even if you can't go in.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 72)),
+      ),
+      Review(
+        id: 'gen-ayuntamiento-de-manila-1',
+        authorName: 'Nica Orozco',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text: "The facade alone tells you a lot about the era it was built in.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 85)),
       ),
     ],
     'palacio-del-gobernador': [
@@ -2264,6 +2532,23 @@ class LocationService {
             'Not much signage explaining what used to stand here, had to look it up myself afterward. Would benefit from a proper historical marker.',
         publishedAt: DateTime.now().subtract(const Duration(days: 49)),
       ),
+      Review(
+        id: 'gen-palacio-del-gobernador-0',
+        authorName: 'Dianne Cordero',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Interesting building to look at from the outside even if you can't go in.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 73)),
+      ),
+      Review(
+        id: 'gen-palacio-del-gobernador-1',
+        authorName: 'Marlon Estacio',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text: "The facade alone tells you a lot about the era it was built in.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 82)),
+      ),
     ],
     'puerta-real-gardens': [
       Review(
@@ -2292,6 +2577,24 @@ class LocationService {
         text:
             'One of the few Intramuros gates you can actually walk through and linger in rather than just photograph from outside. Highly recommend for golden hour shots.',
         publishedAt: DateTime.now().subtract(const Duration(days: 35)),
+      ),
+      Review(
+        id: 'gen-puerta-real-gardens-0',
+        authorName: 'Elijah Fajardo',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Nice shaded benches, good place to rest between walking the rest of Intramuros.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 74)),
+      ),
+      Review(
+        id: 'gen-puerta-real-gardens-1',
+        authorName: 'Grace Hilario',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Well-maintained landscaping, someone is clearly taking care of the grounds here.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 85)),
       ),
     ],
     'asean-gardens': [
@@ -2322,6 +2625,24 @@ class LocationService {
             'Symbolically nice given how much of Southeast Asian trade history passed through this port city. Peaceful, uncrowded, good for a slow morning walk.',
         publishedAt: DateTime.now().subtract(const Duration(days: 42)),
       ),
+      Review(
+        id: 'gen-asean-gardens-0',
+        authorName: 'Dianne Cordero',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Nice shaded benches, good place to rest between walking the rest of Intramuros.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 73)),
+      ),
+      Review(
+        id: 'gen-asean-gardens-1',
+        authorName: 'Marlon Estacio',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Well-maintained landscaping, someone is clearly taking care of the grounds here.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 82)),
+      ),
     ],
     'galleria-de-los-presidentes': [
       Review(
@@ -2350,6 +2671,24 @@ class LocationService {
         text:
             'Some of the reliefs could use cleaning but overall a nice free stop. Good shade from the surrounding trees during midday heat.',
         publishedAt: DateTime.now().subtract(const Duration(days: 60)),
+      ),
+      Review(
+        id: 'gen-galleria-de-los-presidentes-0',
+        authorName: 'Nica Orozco',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Nice shaded benches, good place to rest between walking the rest of Intramuros.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 73)),
+      ),
+      Review(
+        id: 'gen-galleria-de-los-presidentes-1',
+        authorName: 'Paolo Ramirez',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Well-maintained landscaping, someone is clearly taking care of the grounds here.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 81)),
       ),
     ],
     'plaza-de-armas': [
@@ -2380,6 +2719,24 @@ class LocationService {
             'Occasional cultural performances happen here on weekends, we got lucky and caught a folk dance group rehearsing. Ask the guards about the schedule.',
         publishedAt: DateTime.now().subtract(const Duration(days: 35)),
       ),
+      Review(
+        id: 'gen-plaza-de-armas-0',
+        authorName: 'Nica Orozco',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Nice shaded benches, good place to rest between walking the rest of Intramuros.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 70)),
+      ),
+      Review(
+        id: 'gen-plaza-de-armas-1',
+        authorName: 'Paolo Ramirez',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Well-maintained landscaping, someone is clearly taking care of the grounds here.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 81)),
+      ),
     ],
     'plaza-moriones': [
       Review(
@@ -2408,6 +2765,24 @@ class LocationService {
         text:
             'Locals hang out here in the evenings, good spot to see everyday Intramuros life outside the tourist bubble of the fort itself.',
         publishedAt: DateTime.now().subtract(const Duration(days: 49)),
+      ),
+      Review(
+        id: 'gen-plaza-moriones-0',
+        authorName: 'Trixie Salcedo',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Nice shaded benches, good place to rest between walking the rest of Intramuros.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 74)),
+      ),
+      Review(
+        id: 'gen-plaza-moriones-1',
+        authorName: 'Ulysses Tanque',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Well-maintained landscaping, someone is clearly taking care of the grounds here.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 81)),
       ),
     ],
     'baluarte-de-santa-barbara': [
@@ -2438,6 +2813,24 @@ class LocationService {
             'Not heavily signposted, easy to walk right past it without realizing what you are looking at. Worth reading up on the fortification names beforehand.',
         publishedAt: DateTime.now().subtract(const Duration(days: 60)),
       ),
+      Review(
+        id: 'gen-baluarte-de-santa-barbara-0',
+        authorName: 'Bea Guanzon',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "The stonework here has survived centuries of weather and war, that alone makes it worth the short detour.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 73)),
+      ),
+      Review(
+        id: 'gen-baluarte-de-santa-barbara-1',
+        authorName: 'Nestor Ibarra',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Quiet corner of the walls, hardly any other tourists when we passed by mid-morning.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 83)),
+      ),
     ],
     'colegio-de-san-juan-de-letran': [
       Review(
@@ -2466,6 +2859,24 @@ class LocationService {
         text:
             'A living piece of Intramuros history that most tourists skip because it is an active school. If you have Dominican or Letran connections it is worth the detour.',
         publishedAt: DateTime.now().subtract(const Duration(days: 60)),
+      ),
+      Review(
+        id: 'gen-colegio-de-san-juan-de-letran-0',
+        authorName: 'Joyce Katigbak',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "You can really feel the history walking past the old buildings on this campus.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 70)),
+      ),
+      Review(
+        id: 'gen-colegio-de-san-juan-de-letran-1',
+        authorName: 'Leo Manalastas',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Not really a tourist stop but the architecture is worth a glance from the street.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 82)),
       ),
     ],
     'mapua-university-intramuros': [
@@ -2496,6 +2907,24 @@ class LocationService {
             'Just passed by on a walking tour, guide mentioned it briefly. Would have liked more context on why the Mapua family chose Intramuros specifically back in 1951.',
         publishedAt: DateTime.now().subtract(const Duration(days: 42)),
       ),
+      Review(
+        id: 'gen-mapua-university-intramuros-0',
+        authorName: 'Elijah Fajardo',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "You can really feel the history walking past the old buildings on this campus.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 70)),
+      ),
+      Review(
+        id: 'gen-mapua-university-intramuros-1',
+        authorName: 'Grace Hilario',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Not really a tourist stop but the architecture is worth a glance from the street.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 82)),
+      ),
     ],
     'pamantasan-ng-lungsod-ng-maynila': [
       Review(
@@ -2525,6 +2954,24 @@ class LocationService {
             'Learned about the scholarship program for Manila public high school top graduates while touring nearby, genuinely impressive mission for a public university.',
         publishedAt: DateTime.now().subtract(const Duration(days: 49)),
       ),
+      Review(
+        id: 'gen-pamantasan-ng-lungsod-ng-maynila-0',
+        authorName: 'Elijah Fajardo',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "You can really feel the history walking past the old buildings on this campus.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 73)),
+      ),
+      Review(
+        id: 'gen-pamantasan-ng-lungsod-ng-maynila-1',
+        authorName: 'Grace Hilario',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Not really a tourist stop but the architecture is worth a glance from the street.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 81)),
+      ),
     ],
     'revellin-de-puerta-real-de-bagumbayan': [
       Review(
@@ -2553,6 +3000,24 @@ class LocationService {
         text:
             'Signage could be clearer distinguishing this ravelin from the main Puerta Real gate itself. Worth a mention if a guide is walking you through the area.',
         publishedAt: DateTime.now().subtract(const Duration(days: 56)),
+      ),
+      Review(
+        id: 'gen-revellin-de-puerta-real-de-bagumbayan-0',
+        authorName: 'Vanessa Uy',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "The stonework here has survived centuries of weather and war, that alone makes it worth the short detour.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 71)),
+      ),
+      Review(
+        id: 'gen-revellin-de-puerta-real-de-bagumbayan-1',
+        authorName: 'Wendell Yabut',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Quiet corner of the walls, hardly any other tourists when we passed by mid-morning.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 84)),
       ),
     ],
     'baluarillo-de-san-juan': [
@@ -2592,6 +3057,15 @@ class LocationService {
             'Standing on the seafront wall here gives you perspective on how massive the old fortifications were.',
         publishedAt: DateTime.now().subtract(const Duration(days: 35)),
       ),
+      Review(
+        id: 'gen-baluarillo-de-san-juan-0',
+        authorName: 'Vanessa Uy',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "The stonework here has survived centuries of weather and war, that alone makes it worth the short detour.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 71)),
+      ),
     ],
     'baluartillo-de-san-jose': [
       Review(
@@ -2621,6 +3095,24 @@ class LocationService {
             'An underrated fortification. Quiet, scenic, and surprisingly intact.',
         publishedAt: DateTime.now().subtract(const Duration(days: 35)),
       ),
+      Review(
+        id: 'gen-baluartillo-de-san-jose-0',
+        authorName: 'Sherwin Ramos',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "The stonework here has survived centuries of weather and war, that alone makes it worth the short detour.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 74)),
+      ),
+      Review(
+        id: 'gen-baluartillo-de-san-jose-1',
+        authorName: 'Trixie Salcedo',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Quiet corner of the walls, hardly any other tourists when we passed by mid-morning.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 84)),
+      ),
     ],
     'reducto-de-san-pedro': [
       Review(
@@ -2649,6 +3141,24 @@ class LocationService {
         text:
             'Interesting stop for anyone studying colonial-era military architecture.',
         publishedAt: DateTime.now().subtract(const Duration(days: 42)),
+      ),
+      Review(
+        id: 'gen-reducto-de-san-pedro-0',
+        authorName: 'Zenaida Abel',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "The stonework here has survived centuries of weather and war, that alone makes it worth the short detour.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 74)),
+      ),
+      Review(
+        id: 'gen-reducto-de-san-pedro-1',
+        authorName: 'Bryan Castillo',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Quiet corner of the walls, hardly any other tourists when we passed by mid-morning.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 83)),
       ),
     ],
     'puerta-del-parian-revellin-del-parian': [
@@ -2688,6 +3198,15 @@ class LocationService {
             'A living piece of 16th-century architecture. The gate and revellin together are very photogenic.',
         publishedAt: DateTime.now().subtract(const Duration(days: 35)),
       ),
+      Review(
+        id: 'gen-puerta-del-parian-revellin-del-parian-0',
+        authorName: 'Renz Bautista',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "The stonework here has survived centuries of weather and war, that alone makes it worth the short detour.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 71)),
+      ),
     ],
     'puerta-isabel-ii': [
       Review(
@@ -2726,6 +3245,15 @@ class LocationService {
             'The Isabel II monument adds a regal touch to an already impressive gateway.',
         publishedAt: DateTime.now().subtract(const Duration(days: 42)),
       ),
+      Review(
+        id: 'gen-puerta-isabel-ii-0',
+        authorName: 'Bryan Castillo',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "The stonework here has survived centuries of weather and war, that alone makes it worth the short detour.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 74)),
+      ),
     ],
     'foro-de-intramuros': [
       Review(
@@ -2754,6 +3282,23 @@ class LocationService {
         text:
             'Caught a community event celebrating Filipino heritage. The programming is always thoughtful.',
         publishedAt: DateTime.now().subtract(const Duration(days: 30)),
+      ),
+      Review(
+        id: 'gen-foro-de-intramuros-0',
+        authorName: 'Kristine Abalos',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Interesting building to look at from the outside even if you can't go in.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 71)),
+      ),
+      Review(
+        id: 'gen-foro-de-intramuros-1',
+        authorName: 'Renz Bautista',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text: "The facade alone tells you a lot about the era it was built in.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 81)),
       ),
     ],
     'fr-george-willman-museum': [
@@ -2784,6 +3329,23 @@ class LocationService {
             'Wonderful to learn about the people behind Intramuros restoration. The photos and documents are well-curated.',
         publishedAt: DateTime.now().subtract(const Duration(days: 35)),
       ),
+      Review(
+        id: 'gen-fr-george-willman-museum-0',
+        authorName: 'Trixie Salcedo',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Interesting building to look at from the outside even if you can't go in.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 71)),
+      ),
+      Review(
+        id: 'gen-fr-george-willman-museum-1',
+        authorName: 'Ulysses Tanque',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text: "The facade alone tells you a lot about the era it was built in.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 84)),
+      ),
     ],
     'ncca-gallery': [
       Review(
@@ -2812,6 +3374,23 @@ class LocationService {
         text:
             'Since 2009 this gallery has championed new voices in Filipino art. Proud of our NCCA.',
         publishedAt: DateTime.now().subtract(const Duration(days: 30)),
+      ),
+      Review(
+        id: 'gen-ncca-gallery-0',
+        authorName: 'Zenaida Abel',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Interesting building to look at from the outside even if you can't go in.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 72)),
+      ),
+      Review(
+        id: 'gen-ncca-gallery-1',
+        authorName: 'Bryan Castillo',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text: "The facade alone tells you a lot about the era it was built in.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 81)),
       ),
     ],
     'bagumbayan-light-and-sound-museum': [
@@ -2851,6 +3430,15 @@ class LocationService {
             'If you visit only one museum in Intramuros, make it this one. The Rizal story has never been told better.',
         publishedAt: DateTime.now().subtract(const Duration(days: 42)),
       ),
+      Review(
+        id: 'gen-bagumbayan-light-and-sound-museum-0',
+        authorName: 'Sofia Umali',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Interesting building to look at from the outside even if you can't go in.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 74)),
+      ),
     ],
     'chamber-of-commerce': [
       Review(
@@ -2879,6 +3467,23 @@ class LocationService {
         text:
             'Mostly an exterior stop, but the colonial-period trade history context is worth appreciating.',
         publishedAt: DateTime.now().subtract(const Duration(days: 42)),
+      ),
+      Review(
+        id: 'gen-chamber-of-commerce-0',
+        authorName: 'Tomas Villar',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Interesting building to look at from the outside even if you can't go in.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 74)),
+      ),
+      Review(
+        id: 'gen-chamber-of-commerce-1',
+        authorName: 'Ysabel Zamora',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text: "The facade alone tells you a lot about the era it was built in.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 82)),
       ),
     ],
     'aduana-intendencia': [
@@ -2909,6 +3514,23 @@ class LocationService {
             'Standing at the corner of Muralla Street, you can picture the customs inspectors of the Spanish period.',
         publishedAt: DateTime.now().subtract(const Duration(days: 35)),
       ),
+      Review(
+        id: 'gen-aduana-intendencia-0',
+        authorName: 'Ysabel Zamora',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Interesting building to look at from the outside even if you can't go in.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 74)),
+      ),
+      Review(
+        id: 'gen-aduana-intendencia-1',
+        authorName: 'Jerico Villaflor',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text: "The facade alone tells you a lot about the era it was built in.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 84)),
+      ),
     ],
     'plaza-de-santo-tomas': [
       Review(
@@ -2937,6 +3559,24 @@ class LocationService {
         text:
             'I love how the plazas of Intramuros tell the story of Spanish urban planning. This one is underrated.',
         publishedAt: DateTime.now().subtract(const Duration(days: 49)),
+      ),
+      Review(
+        id: 'gen-plaza-de-santo-tomas-0',
+        authorName: 'Grace Hilario',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Nice shaded benches, good place to rest between walking the rest of Intramuros.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 73)),
+      ),
+      Review(
+        id: 'gen-plaza-de-santo-tomas-1',
+        authorName: 'Ivan Javier',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Well-maintained landscaping, someone is clearly taking care of the grounds here.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 81)),
       ),
     ],
     'plaza-espana': [
@@ -2976,6 +3616,15 @@ class LocationService {
             'Soriano, Solana, and Muralla converge here. The plaza captures the layered history of the walled city.',
         publishedAt: DateTime.now().subtract(const Duration(days: 42)),
       ),
+      Review(
+        id: 'gen-plaza-espana-0',
+        authorName: 'Fely Navarro',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Nice shaded benches, good place to rest between walking the rest of Intramuros.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 74)),
+      ),
     ],
     'manila-high-school': [
       Review(
@@ -3004,6 +3653,24 @@ class LocationService {
         text:
             'The educational presence inside Intramuros keeps the district alive and connected to the community.',
         publishedAt: DateTime.now().subtract(const Duration(days: 30)),
+      ),
+      Review(
+        id: 'gen-manila-high-school-0',
+        authorName: 'Joyce Katigbak',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "You can really feel the history walking past the old buildings on this campus.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 71)),
+      ),
+      Review(
+        id: 'gen-manila-high-school-1',
+        authorName: 'Leo Manalastas',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Not really a tourist stop but the architecture is worth a glance from the street.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 82)),
       ),
     ],
     'lyceum-of-the-philippines-university': [
@@ -3042,6 +3709,529 @@ class LocationService {
         text:
             'LPU on Muralla Street is where future tourism leaders train surrounded by centuries of history.',
         publishedAt: DateTime.now().subtract(const Duration(days: 49)),
+      ),
+      Review(
+        id: 'gen-lyceum-of-the-philippines-university-0',
+        authorName: 'Bea Guanzon',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "You can really feel the history walking past the old buildings on this campus.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 73)),
+      ),
+    ],
+    'barbara-s-cafe': [
+      Review(
+        id: 'gen-barbara-s-cafe-0',
+        authorName: 'Bea Guanzon',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Good WiFi and enough outlets to actually get work done here for a few hours.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 16)),
+      ),
+      Review(
+        id: 'gen-barbara-s-cafe-1',
+        authorName: 'Nestor Ibarra',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Coffee was decent, seating filled up quickly on a weekend afternoon.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 26)),
+      ),
+      Review(
+        id: 'gen-barbara-s-cafe-2',
+        authorName: 'Cassandra Lorenzo',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Nice quiet spot to recharge, both the phone and the legs, after a long walk around the walls.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 39)),
+      ),
+      Review(
+        id: 'gen-barbara-s-cafe-3',
+        authorName: 'Aldrin Mercado',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text: "A bit pricier than I expected but the ambiance made up for it.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 51)),
+      ),
+      Review(
+        id: 'gen-barbara-s-cafe-4',
+        authorName: 'Fely Navarro',
+        authorPhotoUrl: '',
+        rating: 3.0,
+        text:
+            "Staff didn't rush us even after we'd been sitting for a while working on laptops.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 63)),
+      ),
+    ],
+    'cafe-de-muralla': [
+      Review(
+        id: 'gen-cafe-de-muralla-0',
+        authorName: 'Aldrin Mercado',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Good WiFi and enough outlets to actually get work done here for a few hours.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 16)),
+      ),
+      Review(
+        id: 'gen-cafe-de-muralla-1',
+        authorName: 'Fely Navarro',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Coffee was decent, seating filled up quickly on a weekend afternoon.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 30)),
+      ),
+      Review(
+        id: 'gen-cafe-de-muralla-2',
+        authorName: 'Oliver Pascual',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Nice quiet spot to recharge, both the phone and the legs, after a long walk around the walls.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 37)),
+      ),
+      Review(
+        id: 'gen-cafe-de-muralla-3',
+        authorName: 'Rowena Quiambao',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text: "A bit pricier than I expected but the ambiance made up for it.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 52)),
+      ),
+      Review(
+        id: 'gen-cafe-de-muralla-4',
+        authorName: 'Sherwin Ramos',
+        authorPhotoUrl: '',
+        rating: 3.0,
+        text:
+            "Staff didn't rush us even after we'd been sitting for a while working on laptops.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 61)),
+      ),
+    ],
+    'fort-brew-coffee': [
+      Review(
+        id: 'gen-fort-brew-coffee-0',
+        authorName: 'Ricky Talavera',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Good WiFi and enough outlets to actually get work done here for a few hours.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 18)),
+      ),
+      Review(
+        id: 'gen-fort-brew-coffee-1',
+        authorName: 'Sofia Umali',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Coffee was decent, seating filled up quickly on a weekend afternoon.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 30)),
+      ),
+      Review(
+        id: 'gen-fort-brew-coffee-2',
+        authorName: 'Tomas Villar',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Nice quiet spot to recharge, both the phone and the legs, after a long walk around the walls.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 37)),
+      ),
+      Review(
+        id: 'gen-fort-brew-coffee-3',
+        authorName: 'Ysabel Zamora',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text: "A bit pricier than I expected but the ambiance made up for it.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 48)),
+      ),
+      Review(
+        id: 'gen-fort-brew-coffee-4',
+        authorName: 'Jerico Villaflor',
+        authorPhotoUrl: '',
+        rating: 3.0,
+        text:
+            "Staff didn't rush us even after we'd been sitting for a while working on laptops.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 60)),
+      ),
+    ],
+    'baluarte-plano-luneta-de-santa-isabel': [
+      Review(
+        id: 'gen-baluarte-plano-luneta-de-santa-isabel-0',
+        authorName: 'Renz Bautista',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "The stonework here has survived centuries of weather and war, that alone makes it worth the short detour.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 18)),
+      ),
+      Review(
+        id: 'gen-baluarte-plano-luneta-de-santa-isabel-1',
+        authorName: 'Dianne Cordero',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Quiet corner of the walls, hardly any other tourists when we passed by mid-morning.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 30)),
+      ),
+      Review(
+        id: 'gen-baluarte-plano-luneta-de-santa-isabel-2',
+        authorName: 'Marlon Estacio',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "You can still see the layered masonry from different restoration periods if you look closely.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 40)),
+      ),
+      Review(
+        id: 'gen-baluarte-plano-luneta-de-santa-isabel-3',
+        authorName: 'Bea Guanzon',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Good photo spot along the wall walk, especially with the afternoon light hitting the old stone.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 51)),
+      ),
+      Review(
+        id: 'gen-baluarte-plano-luneta-de-santa-isabel-4',
+        authorName: 'Nestor Ibarra',
+        authorPhotoUrl: '',
+        rating: 3.0,
+        text:
+            "Not much signage explaining the history, we had to look it up ourselves afterward.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 59)),
+      ),
+    ],
+    'baluartillo-de-san-eugenio': [
+      Review(
+        id: 'gen-baluartillo-de-san-eugenio-0',
+        authorName: 'Jerico Villaflor',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "The stonework here has survived centuries of weather and war, that alone makes it worth the short detour.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 17)),
+      ),
+      Review(
+        id: 'gen-baluartillo-de-san-eugenio-1',
+        authorName: 'Kristine Abalos',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Quiet corner of the walls, hardly any other tourists when we passed by mid-morning.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 30)),
+      ),
+      Review(
+        id: 'gen-baluartillo-de-san-eugenio-2',
+        authorName: 'Renz Bautista',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "You can still see the layered masonry from different restoration periods if you look closely.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 37)),
+      ),
+      Review(
+        id: 'gen-baluartillo-de-san-eugenio-3',
+        authorName: 'Dianne Cordero',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Good photo spot along the wall walk, especially with the afternoon light hitting the old stone.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 52)),
+      ),
+      Review(
+        id: 'gen-baluartillo-de-san-eugenio-4',
+        authorName: 'Marlon Estacio',
+        authorPhotoUrl: '',
+        rating: 3.0,
+        text:
+            "Not much signage explaining the history, we had to look it up ourselves afterward.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 61)),
+      ),
+    ],
+    'baluarte-de-san-andres': [
+      Review(
+        id: 'gen-baluarte-de-san-andres-0',
+        authorName: 'Trixie Salcedo',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "The stonework here has survived centuries of weather and war, that alone makes it worth the short detour.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 17)),
+      ),
+      Review(
+        id: 'gen-baluarte-de-san-andres-1',
+        authorName: 'Ulysses Tanque',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Quiet corner of the walls, hardly any other tourists when we passed by mid-morning.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 29)),
+      ),
+      Review(
+        id: 'gen-baluarte-de-san-andres-2',
+        authorName: 'Vanessa Uy',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "You can still see the layered masonry from different restoration periods if you look closely.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 41)),
+      ),
+      Review(
+        id: 'gen-baluarte-de-san-andres-3',
+        authorName: 'Wendell Yabut',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Good photo spot along the wall walk, especially with the afternoon light hitting the old stone.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 48)),
+      ),
+      Review(
+        id: 'gen-baluarte-de-san-andres-4',
+        authorName: 'Zenaida Abel',
+        authorPhotoUrl: '',
+        rating: 3.0,
+        text:
+            "Not much signage explaining the history, we had to look it up ourselves afterward.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 63)),
+      ),
+    ],
+    'revellin-de-recoletos': [
+      Review(
+        id: 'gen-revellin-de-recoletos-0',
+        authorName: 'Wendell Yabut',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "The stonework here has survived centuries of weather and war, that alone makes it worth the short detour.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 17)),
+      ),
+      Review(
+        id: 'gen-revellin-de-recoletos-1',
+        authorName: 'Zenaida Abel',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Quiet corner of the walls, hardly any other tourists when we passed by mid-morning.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 28)),
+      ),
+      Review(
+        id: 'gen-revellin-de-recoletos-2',
+        authorName: 'Bryan Castillo',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "You can still see the layered masonry from different restoration periods if you look closely.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 37)),
+      ),
+      Review(
+        id: 'gen-revellin-de-recoletos-3',
+        authorName: 'Cherie Domingo',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Good photo spot along the wall walk, especially with the afternoon light hitting the old stone.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 52)),
+      ),
+      Review(
+        id: 'gen-revellin-de-recoletos-4',
+        authorName: 'Elijah Fajardo',
+        authorPhotoUrl: '',
+        rating: 3.0,
+        text:
+            "Not much signage explaining the history, we had to look it up ourselves afterward.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 62)),
+      ),
+    ],
+    'baluarte-de-dilao': [
+      Review(
+        id: 'gen-baluarte-de-dilao-0',
+        authorName: 'Cherie Domingo',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "The stonework here has survived centuries of weather and war, that alone makes it worth the short detour.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 18)),
+      ),
+      Review(
+        id: 'gen-baluarte-de-dilao-1',
+        authorName: 'Elijah Fajardo',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Quiet corner of the walls, hardly any other tourists when we passed by mid-morning.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 27)),
+      ),
+      Review(
+        id: 'gen-baluarte-de-dilao-2',
+        authorName: 'Grace Hilario',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "You can still see the layered masonry from different restoration periods if you look closely.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 38)),
+      ),
+      Review(
+        id: 'gen-baluarte-de-dilao-3',
+        authorName: 'Ivan Javier',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Good photo spot along the wall walk, especially with the afternoon light hitting the old stone.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 50)),
+      ),
+      Review(
+        id: 'gen-baluarte-de-dilao-4',
+        authorName: 'Joyce Katigbak',
+        authorPhotoUrl: '',
+        rating: 3.0,
+        text:
+            "Not much signage explaining the history, we had to look it up ourselves afterward.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 60)),
+      ),
+    ],
+    'baluarte-de-san-gabriel': [
+      Review(
+        id: 'gen-baluarte-de-san-gabriel-0',
+        authorName: 'Aldrin Mercado',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "The stonework here has survived centuries of weather and war, that alone makes it worth the short detour.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 19)),
+      ),
+      Review(
+        id: 'gen-baluarte-de-san-gabriel-1',
+        authorName: 'Fely Navarro',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Quiet corner of the walls, hardly any other tourists when we passed by mid-morning.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 28)),
+      ),
+      Review(
+        id: 'gen-baluarte-de-san-gabriel-2',
+        authorName: 'Oliver Pascual',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "You can still see the layered masonry from different restoration periods if you look closely.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 38)),
+      ),
+      Review(
+        id: 'gen-baluarte-de-san-gabriel-3',
+        authorName: 'Rowena Quiambao',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Good photo spot along the wall walk, especially with the afternoon light hitting the old stone.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 48)),
+      ),
+      Review(
+        id: 'gen-baluarte-de-san-gabriel-4',
+        authorName: 'Sherwin Ramos',
+        authorPhotoUrl: '',
+        rating: 3.0,
+        text:
+            "Not much signage explaining the history, we had to look it up ourselves afterward.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 62)),
+      ),
+    ],
+    'plazuela-de-santa-isabel': [
+      Review(
+        id: 'gen-plazuela-de-santa-isabel-0',
+        authorName: 'Paolo Ramirez',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Nice shaded benches, good place to rest between walking the rest of Intramuros.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 18)),
+      ),
+      Review(
+        id: 'gen-plazuela-de-santa-isabel-1',
+        authorName: 'Queenie Santos',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Well-maintained landscaping, someone is clearly taking care of the grounds here.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 27)),
+      ),
+      Review(
+        id: 'gen-plazuela-de-santa-isabel-2',
+        authorName: 'Ricky Talavera',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Popular spot for prenup and graduation photoshoots, expect to share the space.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 37)),
+      ),
+      Review(
+        id: 'gen-plazuela-de-santa-isabel-3',
+        authorName: 'Sofia Umali',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Quiet in the early morning, gets busier with joggers and vendors as the day goes on.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 49)),
+      ),
+      Review(
+        id: 'gen-plazuela-de-santa-isabel-4',
+        authorName: 'Tomas Villar',
+        authorPhotoUrl: '',
+        rating: 3.0,
+        text:
+            "Simple but pleasant, a good breather stop rather than a destination on its own.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 62)),
+      ),
+    ],
+    'plaza-mexico': [
+      Review(
+        id: 'gen-plaza-mexico-0',
+        authorName: 'Bea Guanzon',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Nice shaded benches, good place to rest between walking the rest of Intramuros.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 18)),
+      ),
+      Review(
+        id: 'gen-plaza-mexico-1',
+        authorName: 'Nestor Ibarra',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Well-maintained landscaping, someone is clearly taking care of the grounds here.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 29)),
+      ),
+      Review(
+        id: 'gen-plaza-mexico-2',
+        authorName: 'Cassandra Lorenzo',
+        authorPhotoUrl: '',
+        rating: 4.0,
+        text:
+            "Popular spot for prenup and graduation photoshoots, expect to share the space.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 37)),
+      ),
+      Review(
+        id: 'gen-plaza-mexico-3',
+        authorName: 'Aldrin Mercado',
+        authorPhotoUrl: '',
+        rating: 5.0,
+        text:
+            "Quiet in the early morning, gets busier with joggers and vendors as the day goes on.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 52)),
+      ),
+      Review(
+        id: 'gen-plaza-mexico-4',
+        authorName: 'Fely Navarro',
+        authorPhotoUrl: '',
+        rating: 3.0,
+        text:
+            "Simple but pleasant, a good breather stop rather than a destination on its own.",
+        publishedAt: DateTime.now().subtract(const Duration(days: 59)),
       ),
     ],
   };
@@ -3117,6 +4307,108 @@ class LocationService {
             description: 'Wheelchair accessible main entrance',
             type: AccessibilityType.ramps,
             location: LatLng(14.5914, 120.9736),
+          ),
+        ],
+
+        // ─── Section 6 additions: non-Cafe accessibility pins ────────────
+        // Placed at the coordinates of already-verified _RawSite entries
+        // (each cross-checked against OSM elsewhere in this file) rather
+        // than invented offsets, per Section 1's "no guessing coordinates"
+        // rule — every pin below is guaranteed inside the verified
+        // Intramuros boundary because it reuses a real site's own pin.
+        // Placement follows realistic patterns for each feature type
+        // (spec Section 6.3): rest areas at plazas/gardens, braille
+        // signage at museums/historical markers, step-free priority
+        // access at gates/riverside walks, rough-terrain warnings at the
+        // older cobblestone fortification approaches.
+        'plaza-roma': [
+          const AccessibilityFeature(
+            id: 'af7',
+            name: 'Rest Area',
+            description: 'Shaded benches around the plaza',
+            type: AccessibilityType.restAreas,
+            location: LatLng(14.5922, 120.9731),
+          ),
+        ],
+        'baluarte-de-san-diego-gardens': [
+          const AccessibilityFeature(
+            id: 'af8',
+            name: 'Rest Area',
+            description: 'Garden seating beside the bastion',
+            type: AccessibilityType.restAreas,
+            location: LatLng(14.5859, 120.9757),
+          ),
+        ],
+        'plaza-san-luis-complex': [
+          const AccessibilityFeature(
+            id: 'af9',
+            name: 'Rest Area',
+            description: 'Seating along the heritage streetscape',
+            type: AccessibilityType.restAreas,
+            location: LatLng(14.5897, 120.9754),
+          ),
+        ],
+        'museo-de-intramuros': [
+          const AccessibilityFeature(
+            id: 'af10',
+            name: 'Braille Signage',
+            description: 'Braille signage available at the entrance',
+            type: AccessibilityType.brailleVoice,
+            location: LatLng(14.5899, 120.9732),
+          ),
+        ],
+        'bahay-tsinoy': [
+          const AccessibilityFeature(
+            id: 'af11',
+            name: 'Braille Signage',
+            description: 'Braille signage available at the entrance',
+            type: AccessibilityType.brailleVoice,
+            location: LatLng(14.5909, 120.9750),
+          ),
+        ],
+        'casa-manila-museum': [
+          const AccessibilityFeature(
+            id: 'af12',
+            name: 'PWD & Senior Priority Access',
+            description: 'Step-free entrance with priority assistance',
+            type: AccessibilityType.pwdSeniorPriority,
+            location: LatLng(14.5897, 120.9752),
+          ),
+        ],
+        'puerta-real-gardens': [
+          const AccessibilityFeature(
+            id: 'af13',
+            name: 'PWD & Senior Priority Access',
+            description: 'Step-free approach through the gardens',
+            type: AccessibilityType.pwdSeniorPriority,
+            location: LatLng(14.5859, 120.9771),
+          ),
+        ],
+        'fort-santiago-riverwalk': [
+          const AccessibilityFeature(
+            id: 'af14',
+            name: 'PWD & Senior Priority Access',
+            description: 'Level riverside path, priority assistance nearby',
+            type: AccessibilityType.pwdSeniorPriority,
+            location: LatLng(14.5949, 120.9710),
+          ),
+        ],
+        'baluarte-de-san-diego': [
+          const AccessibilityFeature(
+            id: 'af15',
+            name: 'Bumpy Road Ahead',
+            description: 'Uneven cobblestone approach to the bastion',
+            type: AccessibilityType.roughTerrain,
+            location: LatLng(14.5854, 120.9756),
+          ),
+        ],
+        'plaza-de-armas': [
+          const AccessibilityFeature(
+            id: 'af16',
+            name: 'Bumpy Road Ahead',
+            description: 'Uneven cobblestone surface inside the fort',
+            type: AccessibilityType.roughTerrain,
+            location: LatLng(14.5945, 120.9701),
           ),
         ],
       };

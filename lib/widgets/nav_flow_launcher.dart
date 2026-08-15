@@ -51,6 +51,31 @@ class NavFlowLauncher {
     );
   }
 
+  /// Explore POIs tab entry point: the "Start turn-by-turn navigation"
+  /// button there already names its mode explicitly, so asking the user
+  /// to choose bird's-eye vs. turn-by-turn immediately afterward would be
+  /// a redundant, nonsensical extra step — this skips
+  /// [showNavViewModeSheet] entirely and goes straight into
+  /// [NavViewMode.turnByTurn]. Every other Navigate entry point still
+  /// goes through [start]/[startWithTarget]/[startFromItinerary], which
+  /// keep the view-mode choice — this is a deliberate, narrow exception
+  /// for the one button whose label already commits to a specific mode.
+  static Future<void> startTurnByTurn(
+    BuildContext context, {
+    required NavTarget target,
+    TransportModeOption transportMode = TransportModeOption.walk,
+  }) {
+    return Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => NavigationScreen(
+          navTarget: target,
+          viewMode: NavViewMode.turnByTurn,
+          transportMode: transportMode,
+        ),
+      ),
+    );
+  }
+
   static Future<void> _startWithTarget(
     BuildContext context, {
     required NavTarget target,

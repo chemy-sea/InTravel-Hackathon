@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'package:intravel/models/nav_target.dart';
 import 'package:intravel/models/route_result_model.dart';
 import 'package:intravel/screens/navigation_screen.dart';
 import 'package:intravel/screens/osm_poi_map_screen.dart';
@@ -103,17 +104,28 @@ void main() {
       await tester.tap(find.text('Start turn-by-turn navigation'));
       await tester.pumpAndSettle();
 
-      // NavFlowLauncher shows the view-mode picker sheet first (Bird's-
-      // eye vs Turn-by-turn) before pushing NavigationScreen — confirming
-      // this reaches the exact same shared flow every other "Navigate"
-      // button in the app uses, not a bespoke path.
-      expect(find.text('Choose a view'), findsOneWidget);
-      expect(find.text('Turn-by-turn view'), findsOneWidget);
-
-      await tester.tap(find.text('Turn-by-turn view'));
-      await tester.pumpAndSettle();
-
+      // The button's label already says "turn-by-turn navigation", so
+      // tapping it must go straight into NavigationScreen in turn-by-turn
+      // mode — no intermediate Bird's-eye/Turn-by-turn choice sheet
+      // (improvement-batch spec: Explore POIs turn-by-turn flow fix).
+      expect(find.text('Choose a view'), findsNothing);
       expect(find.byType(NavigationScreen), findsOneWidget);
+      final navigationScreen = tester.widget<NavigationScreen>(
+        find.byType(NavigationScreen),
+      );
+      expect(navigationScreen.viewMode, NavViewMode.turnByTurn);
     },
   );
+
+  testWidgets('the app bar has no standalone "list of locations" toggle — POI '
+      'browsing lives elsewhere in the app, and the only list fallback here '
+      'is the automatic map-unavailable failsafe', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(home: OsmPoiMapScreen(routingService: _FakeRoutingService())),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Show list'), findsNothing);
+    expect(find.byTooltip('Show map'), findsNothing);
+  });
 }
