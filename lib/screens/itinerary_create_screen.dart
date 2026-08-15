@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../widgets/location_photo.dart';
 import '../services/location_service.dart';
 import '../services/itinerary_service.dart';
 import '../models/location_model.dart';
@@ -299,12 +300,6 @@ class _SelectableSiteCard extends StatelessWidget {
     required this.onTap,
   });
 
-  ImageProvider _resolveImage() {
-    return site.imageUrl.startsWith('http')
-        ? NetworkImage(site.imageUrl)
-        : AssetImage(site.imageUrl) as ImageProvider;
-  }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -327,17 +322,7 @@ class _SelectableSiteCard extends StatelessWidget {
             children: [
               SizedBox(
                 width: 90,
-                child: Image(
-                  image: _resolveImage(),
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF4B6258), Color(0xFF1C4034)],
-                      ),
-                    ),
-                  ),
-                ),
+                child: LocationPhoto(imagePath: site.imageUrl, width: 90),
               ),
               Expanded(
                 child: Padding(

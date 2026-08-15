@@ -5,8 +5,9 @@ import 'package:intravel/screens/itinerary_create_screen.dart';
 import 'package:intravel/screens/location_details_screen.dart';
 import 'package:intravel/services/location_service.dart';
 
-/// Improvement-batch spec Section 7 — the Location Details "Directions"
-/// button, which used to be a literal `onTap: () {}`.
+/// Improvement-batch spec Section 7 — the Location Details "Itinerary"
+/// button (formerly labeled "Directions"), which used to be a literal
+/// `onTap: () {}`.
 void main() {
   setUp(() {
     final view =
@@ -26,7 +27,7 @@ void main() {
     view.resetDevicePixelRatio();
   });
 
-  testWidgets('tapping Directions opens the itinerary builder with the '
+  testWidgets('tapping Itinerary opens the itinerary builder with the '
       'originating location already included', (tester) async {
     final location = LocationService().getAllLocations().first;
 
@@ -37,16 +38,23 @@ void main() {
 
     // The action row lives inside a lazily-built sliver, so it isn't in the
     // tree until scrolled to.
-    final directions = find.text('Directions');
+    final itineraryButton = find.text('Itinerary');
     await tester.dragUntilVisible(
-      directions,
+      itineraryButton,
       find.byType(CustomScrollView),
       const Offset(0, -300),
     );
     await tester.pumpAndSettle();
 
-    expect(directions, findsOneWidget);
-    await tester.tap(directions);
+    expect(itineraryButton, findsOneWidget);
+    await tester.tap(itineraryButton);
+    await tester.pumpAndSettle();
+
+    // Tapping the action button now opens an options sheet (Create New
+    // Itinerary / Add to Saved Itinerary) rather than jumping straight to
+    // the builder — choose "Create New Itinerary" to reach it.
+    expect(find.text('Add to Itinerary'), findsOneWidget);
+    await tester.tap(find.text('Create New Itinerary'));
     await tester.pumpAndSettle();
 
     // Landed on the builder…

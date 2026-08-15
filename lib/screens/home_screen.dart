@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../widgets/location_photo.dart';
 import '../services/location_service.dart';
 import '../models/location_model.dart';
 import '../widgets/transport_access_section.dart';
@@ -343,13 +344,6 @@ class _LocationCard extends StatelessWidget {
 
   const _LocationCard({required this.site, required this.colors});
 
-  ImageProvider _resolveImage() {
-    if (site.imageUrl.startsWith('http')) {
-      return NetworkImage(site.imageUrl);
-    }
-    return AssetImage(site.imageUrl);
-  }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -370,7 +364,7 @@ class _LocationCard extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             Image(
-              image: _resolveImage(),
+              image: resolveLocationImage(site.imageUrl),
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => Container(
                 decoration: const BoxDecoration(

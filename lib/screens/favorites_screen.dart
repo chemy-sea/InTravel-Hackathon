@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../widgets/location_photo.dart';
 import '../services/location_service.dart';
 import '../services/saved_places_service.dart';
 import '../services/itinerary_service.dart';
@@ -276,12 +277,6 @@ class _SavedCard extends StatelessWidget {
 
   const _SavedCard({required this.colors, required this.location});
 
-  ImageProvider _resolveImage() {
-    return location.imageUrl.startsWith('http')
-        ? NetworkImage(location.imageUrl)
-        : AssetImage(location.imageUrl) as ImageProvider;
-  }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -305,16 +300,10 @@ class _SavedCard extends StatelessWidget {
             SizedBox(
               width: 115,
               height: 102,
-              child: Image(
-                image: _resolveImage(),
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF4B6258), Color(0xFF1C4034)],
-                    ),
-                  ),
-                ),
+              child: LocationPhoto(
+                imagePath: location.imageUrl,
+                width: 115,
+                height: 102,
               ),
             ),
             const SizedBox(width: 11),

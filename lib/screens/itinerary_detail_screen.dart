@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../widgets/location_photo.dart';
 import '../models/itinerary_model.dart';
 import '../models/location_model.dart';
 import '../services/itinerary_service.dart';
@@ -564,12 +565,6 @@ class _StopCard extends StatelessWidget {
     required this.onRemove,
   });
 
-  ImageProvider _resolveImage() {
-    return site.imageUrl.startsWith('http')
-        ? NetworkImage(site.imageUrl)
-        : AssetImage(site.imageUrl) as ImageProvider;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -607,17 +602,7 @@ class _StopCard extends StatelessWidget {
                     ),
                   );
                 },
-                child: Image(
-                  image: _resolveImage(),
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF4B6258), Color(0xFF1C4034)],
-                      ),
-                    ),
-                  ),
-                ),
+                child: LocationPhoto(imagePath: site.imageUrl, width: 115),
               ),
             ),
             Expanded(

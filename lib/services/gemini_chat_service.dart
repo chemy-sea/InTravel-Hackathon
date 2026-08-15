@@ -538,11 +538,27 @@ class GeminiChatService {
     // Same retry/backoff treatment as [sendMessage]: a tool-call
     // follow-up is mid-conversation, so losing it to a capacity blip
     // would leave the user's confirmed action unacknowledged.
+    //
+    // `llm_provider`/`model_name` are repeated here even though this
+    // call continues an existing thread — see [_llmProvider]'s doc
+    // comment for why omitting them on *any* Backboard call risks a
+    // silent fallback to Backboard's own default provider/model, which
+    // was live-checked to return a hard 500. Not repeating these on
+    // this endpoint was an oversight in the initial migration: a
+    // tool-calling turn (`checkPrice`/`addToItinerary`/
+    // `createItinerary`) always starts with a `/threads/messages` call
+    // that *does* pass them, but there's no confirmed guarantee
+    // Backboard's `/threads/tool-outputs` inherits the thread's
+    // provider/model rather than falling back to its own default when
+    // they're absent from this specific request — so they're passed
+    // explicitly here too, matching [sendMessage] exactly.
     return _send(() async {
       final apiKey = await _resolveApiKey();
       return _post('/threads/tool-outputs', apiKey, {
         'thread_id': _threadId,
         'tool_outputs': toolOutputs,
+        'llm_provider': _llmProvider,
+        'model_name': _modelName,
       });
     });
   }
@@ -555,19 +571,50 @@ class GeminiChatService {
   /// id-based matching requirement.
   final Map<String, String> _pendingToolCallIdsByName = {};
 
+  /// How long to wait for a Backboard response before giving up on this
+  /// attempt. Without this, a hung request (dead connection, Backboard
+  /// stuck server-side) would leave the `await` below unresolved
+  /// forever — the retry loop in [_send] only runs after an exception is
+  /// thrown, so no timeout here means no retry, no fallback, and the
+  /// chat sheet's typing indicator spinning indefinitely with no way
+  /// out short of closing the sheet. Mirrors
+  /// [OpenRouteServiceRouting.getWalkingRoute]'s identical 15s timeout
+  /// in `routing_service.dart`; a hosted LLM call can occasionally
+  /// legitimately take slightly longer than routing's does, hence the
+  /// larger 20s allowance here rather than reusing the same constant.
+  static const Duration _requestTimeout = Duration(seconds: 20);
+
   Future<Map<String, Object?>> _post(
     String path,
     String apiKey,
     Map<String, Object?> body,
   ) async {
-    final response = await _httpClient.post(
-      Uri.parse('$_baseUrl$path'),
-      headers: {
-        'X-API-Key': apiKey,
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(body),
-    );
+    http.Response response;
+    try {
+      response = await _httpClient
+          .post(
+            Uri.parse('$_baseUrl$path'),
+            headers: {
+              'X-API-Key': apiKey,
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(body),
+          )
+          .timeout(_requestTimeout);
+    } catch (e) {
+      // Covers both a genuine `TimeoutException` (caught by `.timeout`
+      // above) and any other network-level failure (e.g. a
+      // `SocketException` from a dropped connection) thrown by the
+      // client itself before a response was ever received. Both are
+      // network conditions worth retrying — `_isTransient` already
+      // matches on "timeout"/"socketexception" — so this is rethrown
+      // as a plain `Exception` rather than a `GeminiChatException`,
+      // exactly like every other failure `_send` retries.
+      throw Exception(
+        'Backboard request failed before a response was received '
+        '(network/timeout): $e',
+      );
+    }
 
     final decoded = response.body.isEmpty
         ? <String, Object?>{}

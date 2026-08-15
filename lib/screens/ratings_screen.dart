@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../widgets/location_photo.dart';
 import '../models/location_model.dart';
 import '../services/location_service.dart';
 import '../services/review_service.dart';
@@ -356,12 +357,6 @@ class _RatingListCard extends StatelessWidget {
     required this.summary,
   });
 
-  ImageProvider _resolveImage() {
-    return location.imageUrl.startsWith('http')
-        ? NetworkImage(location.imageUrl)
-        : AssetImage(location.imageUrl) as ImageProvider;
-  }
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -386,17 +381,7 @@ class _RatingListCard extends StatelessWidget {
             children: [
               SizedBox(
                 width: 115,
-                child: Image(
-                  image: _resolveImage(),
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF4B6258), Color(0xFF1C4034)],
-                      ),
-                    ),
-                  ),
-                ),
+                child: LocationPhoto(imagePath: location.imageUrl, width: 115),
               ),
               Expanded(
                 child: Padding(

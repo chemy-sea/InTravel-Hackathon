@@ -15,6 +15,21 @@ if (localPropertiesFile.exists()) {
 
 val mapsApiKey: String = localProperties.getProperty("MAPS_API_KEY") ?: ""
 
+// Release signing config, read from android/key.properties (gitignored -
+// see android/.gitignore's `key.properties` / `**/*.keystore` / `**/*.jks`
+// entries; never commit the real file, only share it or its values
+// out-of-band with whoever else needs to produce a signed release build).
+// Falls back to null (handled below) rather than throwing if the file is
+// missing, so debug builds and CI checkouts without release secrets still
+// configure and build normally - only `assembleRelease`/`bundleRelease`
+// actually need this to be present and correct.
+val keyPropertiesFile = rootProject.file("key.properties")
+val keyProperties = Properties()
+val hasReleaseSigningConfig = keyPropertiesFile.exists()
+if (hasReleaseSigningConfig) {
+    keyPropertiesFile.inputStream().use { keyProperties.load(it) }
+}
+
 android {
     namespace = "com.example.intravel"
     compileSdk = flutter.compileSdkVersion
@@ -36,11 +51,29 @@ android {
         manifestPlaceholders["mapsApiKey"] = mapsApiKey
     }
 
+    signingConfigs {
+        if (hasReleaseSigningConfig) {
+            create("release") {
+                storeFile = file(keyProperties.getProperty("storeFile"))
+                storePassword = keyProperties.getProperty("storePassword")
+                keyAlias = keyProperties.getProperty("keyAlias")
+                keyPassword = keyProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Use the real release keystore (android/key.properties) once
+            // it exists; otherwise fall back to debug-signing so the
+            // project still builds for anyone who hasn't set up release
+            // signing yet. A build using the debug-signed fallback is NOT
+            // suitable for distribution - it must not be what ships.
+            signingConfig = if (hasReleaseSigningConfig) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }
