@@ -1,5 +1,6 @@
 {
   "_comment": "OSM POIs for the Intramuros demo, fetched via Overpass API by tool/fetch_pois.dart (see bbox below) and then curated by hand: deduplicated near-identical node/way pairs for the same landmark, dropped unnamed/low-value historic markers to keep the demo focused, and paired each entry with a photoPath (local asset where the app already has one, otherwise a Wikimedia Commons URL) since OSM itself has no photo data. photoPath values are preserved across re-runs of tool/fetch_pois.dart by OSM id. Never fetched live at runtime -- see lib/services/poi_service.dart.",
+  "_boundaryAuditNote": "2026-08: audited every entry against the verified Intramuros walled-city boundary (OSM relation 103707, boundary=administrative/addresstype=quarter under Manila, fetched via the Nominatim API -- see docs/intramuros-boundary.md for the full source and method) rather than the bbox above, which is a loose fetch window and not the actual wall line. Removed 3 entries that fell outside the boundary despite being inside the bbox: 'Rizal Park Musical Dancing Fountain' and 'Flower Clock' (both in Rizal Park/Luneta, west of the walls) and 'Pasig River Esplanade' (riverside, north of the walls). All remaining entries were confirmed inside the boundary polygon by point-in-polygon test. Do not re-add these three without independently re-verifying they sit inside the boundary; they are outside for real, not by a coordinate error.",
   "generatedAt": "2026-08-13T02:16:53.865029",
   "bbox": {
     "south": 14.583,
@@ -57,14 +58,6 @@
       "photoPath": "assets/intravel/assets/home/ayuntamiento.jpg"
     },
     {
-      "id": "node/12284519950",
-      "name": "Pasig River Esplanade",
-      "category": "attraction",
-      "lat": 14.595868,
-      "lng": 120.9782951,
-      "photoPath": "assets/intravel/assets/home/ia-pasig-esplanade.jpg"
-    },
-    {
       "id": "way/83591315",
       "name": "Manila High School",
       "category": "school",
@@ -103,22 +96,6 @@
       "lat": 14.5900429,
       "lng": 120.9731279,
       "photoPath": "https://upload.wikimedia.org/wikipedia/commons/1/16/San_Ignacio_Church_ruins%2C_Intramuros.jpg"
-    },
-    {
-      "id": "way/1193157079",
-      "name": "Rizal Park Musical Dancing Fountain",
-      "category": "attraction",
-      "lat": 14.5828165,
-      "lng": 120.9788626,
-      "photoPath": "https://upload.wikimedia.org/wikipedia/commons/4/4d/Rizal_Park_Dancing_Fountain.jpg"
-    },
-    {
-      "id": "way/1038058961",
-      "name": "Flower Clock",
-      "category": "attraction",
-      "lat": 14.5832692,
-      "lng": 120.9796747,
-      "photoPath": "https://upload.wikimedia.org/wikipedia/commons/6/6a/Rizal_Park_Flower_Clock.jpg"
     },
     {
       "id": "way/3388716896",
