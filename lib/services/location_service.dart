@@ -153,11 +153,10 @@ class LocationService {
       photo: 'assets/intravel/assets/home/ia-fort-riverwalk.jpg',
       area: 'Fort Santiago river side',
       history:
-          'Opened in 2025, the Fort Santiago Riverwalk opens the riverside walls of Fort Santiago and connects visitors toward the Pasig River Esplanade.',
+          'Opened in 2025, the Fort Santiago Riverwalk opens the riverside walls of Fort Santiago along the Pasig.',
       highlights: [
         'Views toward the Pasig River',
         'Fort walls from the river side',
-        'A walking connection toward the esplanade',
       ],
       visitNote:
           'Use designated paths and observe on-site safety guidance, especially after rain or during maintenance.',
@@ -165,41 +164,15 @@ class LocationService {
       // 120.97101. The previous value was north of the south bank, i.e.
       // in the Pasig itself.
       coordinates: const LatLng(14.5949, 120.9710),
-      relatedPlaceIds: [
-        'fort-santiago',
-        'pasig-river-esplanade',
-        'plaza-moriones',
-      ],
+      relatedPlaceIds: ['fort-santiago', 'plaza-moriones'],
     ),
-    _RawSite(
-      id: 'pasig-river-esplanade',
-      budgetRange: const BudgetRange(min: 20, max: 70),
-      name: 'Pasig River Esplanade',
-      category: 'Parks',
-      type: 'Promenade',
-      note: 'Riverside public walk',
-      access: 'Free',
-      photo: 'assets/intravel/assets/home/ia-pasig-esplanade.jpg',
-      area: 'Pasig River waterfront',
-      history:
-          "The Pasig River Esplanade is a public riverfront promenade that reconnects people with Manila's historic waterway and reaches toward the Intramuros side of the river.",
-      highlights: [
-        'River and city views',
-        'Public promenade space',
-        'Connection toward Fort Santiago',
-      ],
-      visitNote:
-          'This is an outdoor public space. Check weather, closures, and local advisories before visiting.',
-      // OSM way 1336921368 "Esplanade - Intramuros": 14.59502, 120.97623
-      // — the Intramuros-side stretch of the riverwalk. The previous value
-      // was in the middle of the Pasig.
-      coordinates: const LatLng(14.5950, 120.9762),
-      relatedPlaceIds: [
-        'fort-santiago-riverwalk',
-        'fort-santiago',
-        'plaza-moriones',
-      ],
-    ),
+    // 'Pasig River Esplanade' was removed here (POI Boundary Audit):
+    // it sits riverside, north of the verified Intramuros wall boundary
+    // (see docs/intramuros-boundary.md), so it was already dropped from
+    // assets/data/pois.json — this _RawSite entry was a separate,
+    // independent duplicate in the app's main location catalog that the
+    // original audit missed. Do not re-add it; it's outside the walls
+    // for real, not by a coordinate error.
     _RawSite(
       id: 'casa-manila-museum',
       budgetRange: const BudgetRange(min: 50, max: 75),
@@ -1768,16 +1741,12 @@ class LocationService {
         'Opens directly onto the Pasig River frontage',
       ],
       visitNote:
-          'Open riverside space with little shade — best in the late afternoon. It connects to the Pasig River Esplanade walk along the same bank.',
+          'Open riverside space with little shade — best in the late afternoon.',
       // OSM relation 18378284 "Plaza Mexico" (leisure=park): 14.59463,
       // 120.97470. Sits on the riverside strip north of the wall line, which
       // is where the real plaza is — still inside Intramuros district.
       coordinates: const LatLng(14.5946, 120.9747),
-      relatedPlaceIds: [
-        'pasig-river-esplanade',
-        'puerta-isabel-ii',
-        'aduana-intendencia',
-      ],
+      relatedPlaceIds: ['puerta-isabel-ii', 'aduana-intendencia'],
     ),
   ];
 
@@ -2139,7 +2108,7 @@ class LocationService {
         authorPhotoUrl: '',
         rating: 5.0,
         text:
-            'Loved that this connects straight to the esplanade for a longer walk. Felt safe, well-lit in the early evening, and much less crowded than the main fort entrance.',
+            'Loved the extra riverside stretch for a longer walk. Felt safe, well-lit in the early evening, and much less crowded than the main fort entrance.',
         publishedAt: DateTime.now().subtract(const Duration(days: 30)),
       ),
       Review(
@@ -2159,53 +2128,6 @@ class LocationService {
         text:
             "Well-maintained landscaping, someone is clearly taking care of the grounds here.",
         publishedAt: DateTime.now().subtract(const Duration(days: 81)),
-      ),
-    ],
-    'pasig-river-esplanade': [
-      Review(
-        id: 'r14a',
-        authorName: 'Ariel Buenaventura',
-        authorPhotoUrl: '',
-        rating: 4.0,
-        text:
-            'Great for a morning jog before the heat kicks in. Wide enough for joggers and cyclists to share without bumping into each other.',
-        publishedAt: DateTime.now().subtract(const Duration(days: 7)),
-      ),
-      Review(
-        id: 'r14b',
-        authorName: 'Cherry Domingo',
-        authorPhotoUrl: '',
-        rating: 4.0,
-        text:
-            'Underrated spot for river views of Manila. Bring your own water though, there are not a lot of vendors along this particular stretch yet.',
-        publishedAt: DateTime.now().subtract(const Duration(days: 21)),
-      ),
-      Review(
-        id: 'r14c',
-        authorName: 'Boyet Salonga',
-        authorPhotoUrl: '',
-        rating: 5.0,
-        text:
-            'It is wild that this used to be an inaccessible industrial edge of the river. Now it is one of the calmest places in the whole walled city to just sit and watch the boats.',
-        publishedAt: DateTime.now().subtract(const Duration(days: 60)),
-      ),
-      Review(
-        id: 'gen-pasig-river-esplanade-0',
-        authorName: 'Vanessa Uy',
-        authorPhotoUrl: '',
-        rating: 4.0,
-        text:
-            "Nice shaded benches, good place to rest between walking the rest of Intramuros.",
-        publishedAt: DateTime.now().subtract(const Duration(days: 74)),
-      ),
-      Review(
-        id: 'gen-pasig-river-esplanade-1',
-        authorName: 'Wendell Yabut',
-        authorPhotoUrl: '',
-        rating: 5.0,
-        text:
-            "Well-maintained landscaping, someone is clearly taking care of the grounds here.",
-        publishedAt: DateTime.now().subtract(const Duration(days: 83)),
       ),
     ],
     'plaza-san-luis-complex': [

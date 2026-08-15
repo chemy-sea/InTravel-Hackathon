@@ -66,3 +66,19 @@ the bbox but outside the actual walls).
 - All other checked coordinates (54 in `location_service.dart`, 4 gates, 4
   transport points, 20 remaining HTML map pins, and all remaining POIs) were
   confirmed inside the boundary.
+
+## Follow-up: a duplicate entry the original audit missed
+
+The original pass above only checked `assets/data/pois.json`'s
+`'Pasig River Esplanade'` entry (removed) — it missed that
+`lib/services/location_service.dart` had a **separate, independent**
+`_RawSite(id: 'pasig-river-esplanade', ...)` entry for the same real-world
+place, which is outside the verified boundary for the exact same reason.
+That entry (plus its dangling references in `fort-santiago-riverwalk` and
+`plaza-mexico`'s `relatedPlaceIds`, and its `_reviewsBySiteId` review list)
+has since been removed too. `assets/data/pois.json` and the `PoiService`
+that read it have since been retired entirely — see
+`lib/screens/osm_poi_map_screen.dart`, which now sources its pins and
+Start/End picker directly from `LocationService`'s catalog instead of a
+separate, independently-curated subset — so there is no longer a second
+data source for this kind of duplicate to hide in.

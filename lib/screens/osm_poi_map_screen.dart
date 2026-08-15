@@ -4,28 +4,37 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:latlong2/latlong.dart' as ll;
 
+import '../models/location_model.dart';
 import '../models/nav_target.dart';
-import '../models/poi_model.dart';
 import '../models/route_result_model.dart';
-import '../services/poi_service.dart';
+import '../services/location_service.dart';
 import '../services/routing_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/category_colors.dart';
 import '../widgets/location_photo.dart';
 import '../widgets/nav_flow_launcher.dart';
 
-/// Standalone POI map: Google Maps base layer (Android), category-coded
-/// POI markers sourced from the bundled `pois.json` asset (see
-/// `PoiService`), and a start/end POI picker that fetches a real
-/// street-following walking route via [RoutingService] (OpenRouteService)
-/// and renders it as a polyline.
+/// Standalone Explore Intramuros map: Google Maps base layer (Android),
+/// category-coded pins for every catalogued location in
+/// [LocationService] (the same 50+ site catalog the rest of the app —
+/// Home, Navigate, Plans — draws from), and a start/end picker that
+/// fetches a real street-following walking route via [RoutingService]
+/// (OpenRouteService) and renders it as a polyline.
+///
+/// Previously this screen's pins/Start/End picker were sourced from a
+/// small, separately-curated ~15-entry `assets/data/pois.json` subset
+/// (see the now-unused `lib/services/poi_service.dart`) that was
+/// completely disconnected from [LocationService]'s much larger catalog
+/// — most of the app's locations were never selectable here at all. This
+/// screen now draws from [LocationService] directly, so its pin/picker
+/// set matches every other screen in the app rather than a separate,
+/// incomplete duplicate list.
 ///
 /// Base map engine: `google_maps_flutter` (Android only — see README for
-/// native API key setup). POI data, marker tap → photo card behavior, and
-/// the OpenRouteService routing integration are unchanged from the prior
-/// OSM/flutter_map build; only the underlying map widget/rendering APIs
-/// changed. If the Google Maps API key is missing/invalid or the map
-/// otherwise fails to initialize, [_MapLoadFailsafe] detects it and shows
-/// a non-crashing fallback state with the POI list still accessible.
+/// native API key setup). If the Google Maps API key is missing/invalid
+/// or the map otherwise fails to initialize, this screen detects it and
+/// shows a non-crashing fallback state with the location list still
+/// accessible.
 class OsmPoiMapScreen extends StatefulWidget {
   const OsmPoiMapScreen({super.key, RoutingService? routingService})
     : _routingServiceOverride = routingService;
@@ -36,7 +45,7 @@ class OsmPoiMapScreen extends StatefulWidget {
   State<OsmPoiMapScreen> createState() => _OsmPoiMapScreenState();
 }
 
-enum _PoiLoadState { loading, loaded, error }
+enum _LocationLoadState { loading, loaded, error }
 
 enum _RouteLoadState { idle, loading, loaded, error }
 
@@ -60,22 +69,22 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
   Timer? _mapLoadTimer;
   _MapLoadState _mapState = _MapLoadState.loading;
 
-  _PoiLoadState _poiState = _PoiLoadState.loading;
-  List<Poi> _pois = const [];
-  String? _poiError;
+  _LocationLoadState _locationState = _LocationLoadState.loading;
+  List<LocationModel> _locations = const [];
+  String? _locationError;
 
-  Poi? _startPoi;
-  Poi? _endPoi;
+  LocationModel? _startLocation;
+  LocationModel? _endLocation;
   _RouteLoadState _routeState = _RouteLoadState.idle;
   RouteResult? _route;
   String? _routeError;
 
-  /// Whether the non-map POI list fallback is being shown — this is a
-  /// failsafe only, shown automatically if the map fails to load, so POI
-  /// browsing/photos keep working even without a map. There is no manual
-  /// toggle for it: a standalone "list of locations" view was removed
-  /// from this page since it duplicated location browsing already
-  /// available elsewhere in the app (Home / Plans).
+  /// Whether the non-map location list fallback is being shown — this is
+  /// a failsafe only, shown automatically if the map fails to load, so
+  /// location browsing/photos keep working even without a map. There is
+  /// no manual toggle for it: a standalone "list of locations" view was
+  /// removed from this page since it duplicated location browsing
+  /// already available elsewhere in the app (Home / Plans).
   bool get _showListFallback => _mapState == _MapLoadState.failed;
 
   @override
@@ -84,7 +93,7 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
     _routingService =
         widget._routingServiceOverride ?? OpenRouteServiceRouting();
     _startMapLoadTimeout();
-    _loadPois();
+    _loadLocations();
   }
 
   @override
@@ -109,32 +118,37 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
     setState(() => _mapState = _MapLoadState.ready);
   }
 
-  Future<void> _loadPois() async {
+  /// Loads the full catalog from [LocationService] — an in-memory, purely
+  /// synchronous lookup (no asset parsing, no network), unlike the old
+  /// `PoiService.loadPois()` this replaced. Kept behind the same
+  /// loading/loaded/error state machine as before (rather than skipping
+  /// straight to a field assignment) so this screen still degrades
+  /// gracefully if [LocationService] ever throws, and so `_buildMapArea`'s
+  /// existing loading/error branches keep working unchanged.
+  void _loadLocations() {
     setState(() {
-      _poiState = _PoiLoadState.loading;
-      _poiError = null;
+      _locationState = _LocationLoadState.loading;
+      _locationError = null;
     });
     try {
-      final pois = await PoiService().loadPois();
+      final locations = LocationService().getAllLocations();
       if (!mounted) return;
       setState(() {
-        _pois = pois;
-        _poiState = _PoiLoadState.loaded;
+        _locations = locations;
+        _locationState = _LocationLoadState.loaded;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _poiError = e is PoiLoadException
-            ? e.message
-            : 'Could not load points of interest.';
-        _poiState = _PoiLoadState.error;
+        _locationError = 'Could not load points of interest.';
+        _locationState = _LocationLoadState.error;
       });
     }
   }
 
   Future<void> _fetchRoute() async {
-    final start = _startPoi;
-    final end = _endPoi;
+    final start = _startLocation;
+    final end = _endLocation;
     if (start == null || end == null) return;
 
     setState(() {
@@ -145,8 +159,8 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
 
     try {
       final result = await _routingService.getWalkingRoute(
-        start.coordinates,
-        end.coordinates,
+        _toRoutingLatLng(start.coordinates),
+        _toRoutingLatLng(end.coordinates),
       );
       if (!mounted) return;
       setState(() {
@@ -166,17 +180,20 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
   }
 
   /// [RoutingService.getWalkingRoute] and [RouteResult] operate on
-  /// `latlong2`'s `LatLng` (unchanged — routing logic was not touched by
-  /// this migration); the map widget itself needs
-  /// `google_maps_flutter`'s own `LatLng` type instead, so points are
-  /// converted at this boundary only.
-  LatLng _toLatLng(ll.LatLng point) => LatLng(point.latitude, point.longitude);
+  /// `latlong2`'s `LatLng`; [LocationModel.coordinates] and the map
+  /// widget itself use `google_maps_flutter`'s own `LatLng` type instead,
+  /// so points are converted at this boundary only.
+  LatLng _toMapLatLng(ll.LatLng point) =>
+      LatLng(point.latitude, point.longitude);
+
+  ll.LatLng _toRoutingLatLng(LatLng point) =>
+      ll.LatLng(point.latitude, point.longitude);
 
   void _fitBoundsToRoute(List<ll.LatLng> points) {
     if (points.isEmpty || _mapController == null) return;
     if (points.length == 1) {
       _mapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(_toLatLng(points.first), 17),
+        CameraUpdate.newLatLngZoom(_toMapLatLng(points.first), 17),
       );
       return;
     }
@@ -207,11 +224,11 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
   /// street-name card, live heading-following camera — rather than a
   /// second, simplified reimplementation living only on this screen.
   /// [NavigationScreen] always routes from the user's live position (or
-  /// selected gate) to the target, so the previewed [_startPoi] here is
-  /// only used to draw the preview polyline above; the actual
-  /// turn-by-turn session's destination is [_endPoi].
+  /// selected gate) to the target, so the previewed [_startLocation] here
+  /// is only used to draw the preview polyline above; the actual
+  /// turn-by-turn session's destination is [_endLocation].
   void _startTurnByTurn() {
-    final end = _endPoi;
+    final end = _endLocation;
     if (end == null) return;
     // Uses [NavFlowLauncher.startTurnByTurn] rather than
     // [NavFlowLauncher.startWithTarget]: this button's label already
@@ -220,63 +237,47 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
     // nonsensical extra step — go straight into turn-by-turn.
     NavFlowLauncher.startTurnByTurn(
       context,
-      target: NavTarget(
-        name: end.name,
-        coordinates: _toLatLng(end.coordinates),
-        imagePath: end.photoPath.isEmpty ? null : end.photoPath,
-      ),
+      target: NavTarget.fromLocation(end),
     );
   }
 
   void _clearRoute() {
     setState(() {
-      _startPoi = null;
-      _endPoi = null;
+      _startLocation = null;
+      _endLocation = null;
       _route = null;
       _routeState = _RouteLoadState.idle;
       _routeError = null;
     });
   }
 
-  void _selectStart(Poi poi) {
+  void _selectStart(LocationModel location) {
     setState(() {
-      _startPoi = poi;
+      _startLocation = location;
       _route = null;
       _routeState = _RouteLoadState.idle;
       _routeError = null;
     });
   }
 
-  void _selectEnd(Poi poi) {
+  void _selectEnd(LocationModel location) {
     setState(() {
-      _endPoi = poi;
+      _endLocation = location;
       _route = null;
       _routeState = _RouteLoadState.idle;
       _routeError = null;
     });
   }
 
-  BitmapDescriptor _hueForCategory(PoiCategory category) {
-    switch (category) {
-      case PoiCategory.school:
-        return BitmapDescriptor.defaultMarkerWithHue(
-          BitmapDescriptor.hueYellow,
-        );
-      case PoiCategory.church:
-        return BitmapDescriptor.defaultMarkerWithHue(
-          BitmapDescriptor.hueViolet,
-        );
-      case PoiCategory.attraction:
-        return BitmapDescriptor.defaultMarkerWithHue(
-          BitmapDescriptor.hueOrange,
-        );
-      case PoiCategory.historic:
-        return BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
-    }
-  }
+  /// Single source of truth (lib/utils/category_colors.dart): the same
+  /// hue every other map-pin category color in the app derives from —
+  /// see the Navigate screen's category filter chips, which use the same
+  /// helper, so a category reads the same color everywhere.
+  BitmapDescriptor _iconForCategory(String category) =>
+      BitmapDescriptor.defaultMarkerWithHue(categoryPinHue(category));
 
   /// While a route is active (loaded, or in flight), only the start/end
-  /// pins should be shown — every other POI pin is hidden so it doesn't
+  /// pins should be shown — every other pin is hidden so it doesn't
   /// clutter the route line, making it harder to actually follow. Normal
   /// browsing (no route requested/loaded yet, or after the user clears
   /// it via [_clearRoute]) restores the full pin set as before.
@@ -285,22 +286,24 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
       _routeState == _RouteLoadState.loaded;
 
   Set<Marker> _buildMarkers() {
-    final poisToShow = _isRouteActive
-        ? _pois.where((poi) => poi.id == _startPoi?.id || poi.id == _endPoi?.id)
-        : _pois;
-    return poisToShow.map((poi) {
-      final isStart = poi.id == _startPoi?.id;
-      final isEnd = poi.id == _endPoi?.id;
+    final locationsToShow = _isRouteActive
+        ? _locations.where(
+            (loc) => loc.id == _startLocation?.id || loc.id == _endLocation?.id,
+          )
+        : _locations;
+    return locationsToShow.map((location) {
+      final isStart = location.id == _startLocation?.id;
+      final isEnd = location.id == _endLocation?.id;
       final icon = isStart
           ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen)
           : isEnd
           ? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed)
-          : _hueForCategory(poi.category);
+          : _iconForCategory(location.category);
       return Marker(
-        markerId: MarkerId(poi.id),
-        position: _toLatLng(poi.coordinates),
+        markerId: MarkerId(location.id),
+        position: location.coordinates,
         icon: icon,
-        onTap: () => _showPoiSheet(poi),
+        onTap: () => _showLocationSheet(location),
       );
     }).toSet();
   }
@@ -311,26 +314,26 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
     return {
       Polyline(
         polylineId: const PolylineId('walking-route'),
-        points: route.points.map(_toLatLng).toList(),
+        points: route.points.map(_toMapLatLng).toList(),
         color: AppTheme.accent,
         width: 5,
       ),
     };
   }
 
-  void _showPoiSheet(Poi poi) {
+  void _showLocationSheet(LocationModel location) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => _PoiBottomSheet(
-        poi: poi,
+      builder: (context) => _LocationPickerSheet(
+        location: location,
         onSetStart: () {
           Navigator.of(context).pop();
-          _selectStart(poi);
+          _selectStart(location);
         },
         onSetEnd: () {
           Navigator.of(context).pop();
-          _selectEnd(poi);
+          _selectEnd(location);
         },
       ),
     );
@@ -365,24 +368,25 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
   }
 
   Widget _buildMapArea(AppColors colors) {
-    if (_poiState == _PoiLoadState.loading) {
+    if (_locationState == _LocationLoadState.loading) {
       return const Center(child: CircularProgressIndicator());
     }
-    if (_poiState == _PoiLoadState.error) {
+    if (_locationState == _LocationLoadState.error) {
       return _ErrorState(
-        message: _poiError ?? 'Could not load points of interest.',
-        onRetry: _loadPois,
+        message: _locationError ?? 'Could not load points of interest.',
+        onRetry: _loadLocations,
       );
     }
 
     // Map failed to load (missing/invalid key, no Play Services, etc.) —
-    // show the graceful fallback instead of a blank screen/crash. POI data
-    // and photos remain accessible via the list view either way.
+    // show the graceful fallback instead of a blank screen/crash.
+    // Location data and photos remain accessible via the list view either
+    // way.
     if (_showListFallback) {
-      return _PoiListFallback(
-        pois: _pois,
+      return _LocationListFallback(
+        locations: _locations,
         mapUnavailable: _mapState == _MapLoadState.failed,
-        onPoiTap: _showPoiSheet,
+        onLocationTap: _showLocationSheet,
       );
     }
 
@@ -439,19 +443,19 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
           Row(
             children: [
               Expanded(
-                child: _PoiDropdown(
+                child: _LocationDropdown(
                   label: 'Start',
-                  pois: _pois,
-                  selected: _startPoi,
+                  locations: _locations,
+                  selected: _startLocation,
                   onChanged: _selectStart,
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _PoiDropdown(
+                child: _LocationDropdown(
                   label: 'End',
-                  pois: _pois,
-                  selected: _endPoi,
+                  locations: _locations,
+                  selected: _endLocation,
                   onChanged: _selectEnd,
                 ),
               ),
@@ -463,9 +467,9 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
               Expanded(
                 child: ElevatedButton(
                   onPressed:
-                      (_startPoi != null &&
-                          _endPoi != null &&
-                          _startPoi!.id != _endPoi!.id &&
+                      (_startLocation != null &&
+                          _endLocation != null &&
+                          _startLocation!.id != _endLocation!.id &&
                           _routeState != _RouteLoadState.loading)
                       ? _fetchRoute
                       : null,
@@ -489,7 +493,7 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
                       : const Text('Get walking route'),
                 ),
               ),
-              if (_startPoi != null || _endPoi != null) ...[
+              if (_startLocation != null || _endLocation != null) ...[
                 const SizedBox(width: 10),
                 IconButton(
                   onPressed: _clearRoute,
@@ -561,15 +565,15 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
   }
 }
 
-class _PoiDropdown extends StatelessWidget {
+class _LocationDropdown extends StatelessWidget {
   final String label;
-  final List<Poi> pois;
-  final Poi? selected;
-  final ValueChanged<Poi> onChanged;
+  final List<LocationModel> locations;
+  final LocationModel? selected;
+  final ValueChanged<LocationModel> onChanged;
 
-  const _PoiDropdown({
+  const _LocationDropdown({
     required this.label,
-    required this.pois,
+    required this.locations,
     required this.selected,
     required this.onChanged,
   });
@@ -588,12 +592,12 @@ class _PoiDropdown extends StatelessWidget {
         ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
       ),
-      items: pois
+      items: locations
           .map(
-            (poi) => DropdownMenuItem<String>(
-              value: poi.id,
+            (location) => DropdownMenuItem<String>(
+              value: location.id,
               child: Text(
-                poi.name,
+                location.name,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 13),
               ),
@@ -602,20 +606,20 @@ class _PoiDropdown extends StatelessWidget {
           .toList(),
       onChanged: (id) {
         if (id == null) return;
-        final poi = pois.firstWhere((p) => p.id == id);
-        onChanged(poi);
+        final location = locations.firstWhere((l) => l.id == id);
+        onChanged(location);
       },
     );
   }
 }
 
-class _PoiBottomSheet extends StatelessWidget {
-  final Poi poi;
+class _LocationPickerSheet extends StatelessWidget {
+  final LocationModel location;
   final VoidCallback onSetStart;
   final VoidCallback onSetEnd;
 
-  const _PoiBottomSheet({
-    required this.poi,
+  const _LocationPickerSheet({
+    required this.location,
     required this.onSetStart,
     required this.onSetEnd,
   });
@@ -633,19 +637,19 @@ class _PoiBottomSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               child: AspectRatio(
                 aspectRatio: 16 / 9,
-                child: poi.photoPath.isEmpty
+                child: location.imageUrl.isEmpty
                     ? Container(color: const Color(0xFF264B3C))
-                    : LocationPhoto(imagePath: poi.photoPath),
+                    : LocationPhoto(imagePath: location.imageUrl),
               ),
             ),
             const SizedBox(height: 14),
             Text(
-              poi.name,
+              location.name,
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
             Text(
-              poi.category.label,
+              location.category,
               style: const TextStyle(fontSize: 13, color: Colors.grey),
             ),
             const SizedBox(height: 16),
@@ -705,18 +709,17 @@ class _ErrorState extends StatelessWidget {
 
 /// Shown in place of the map when it fails to load (missing/invalid Google
 /// Maps API key, no Play Services, etc.) — per the failsafe requirement,
-/// the app must not crash or show a blank screen, and POI browsing should
-/// keep working even without the map. Also reachable manually via the
-/// list/map toggle in the app bar regardless of map load state.
-class _PoiListFallback extends StatelessWidget {
-  final List<Poi> pois;
+/// the app must not crash or show a blank screen, and location browsing
+/// should keep working even without the map.
+class _LocationListFallback extends StatelessWidget {
+  final List<LocationModel> locations;
   final bool mapUnavailable;
-  final ValueChanged<Poi> onPoiTap;
+  final ValueChanged<LocationModel> onLocationTap;
 
-  const _PoiListFallback({
-    required this.pois,
+  const _LocationListFallback({
+    required this.locations,
     required this.mapUnavailable,
-    required this.onPoiTap,
+    required this.onLocationTap,
   });
 
   @override
@@ -749,10 +752,10 @@ class _PoiListFallback extends StatelessWidget {
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.all(16),
-            itemCount: pois.length,
+            itemCount: locations.length,
             separatorBuilder: (_, _) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
-              final poi = pois[index];
+              final location = locations[index];
               return ListTile(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -763,17 +766,17 @@ class _PoiListFallback extends StatelessWidget {
                   child: SizedBox(
                     width: 48,
                     height: 48,
-                    child: poi.photoPath.isEmpty
+                    child: location.imageUrl.isEmpty
                         ? Container(color: const Color(0xFF264B3C))
-                        : LocationPhoto(imagePath: poi.photoPath),
+                        : LocationPhoto(imagePath: location.imageUrl),
                   ),
                 ),
                 title: Text(
-                  poi.name,
+                  location.name,
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
-                subtitle: Text(poi.category.label),
-                onTap: () => onPoiTap(poi),
+                subtitle: Text(location.category),
+                onTap: () => onLocationTap(location),
               );
             },
           ),
