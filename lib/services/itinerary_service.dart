@@ -100,6 +100,17 @@ class ItineraryService extends ChangeNotifier {
     await _persist();
   }
 
+  /// Deletes every itinerary whose id is in [ids] in a single pass (Your
+  /// Hub multi-select bulk delete) — one `notifyListeners()`/persist write
+  /// instead of looping [deleteItinerary] per id.
+  Future<void> deleteItineraries(Iterable<String> ids) async {
+    final idSet = ids.toSet();
+    if (idSet.isEmpty) return;
+    _itineraries.removeWhere((i) => idSet.contains(i.id));
+    notifyListeners();
+    await _persist();
+  }
+
   Future<void> addLocation(String itineraryId, String locationId) async {
     _updateItinerary(itineraryId, (i) {
       if (i.locationIds.contains(locationId)) return i;

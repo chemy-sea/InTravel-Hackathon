@@ -34,11 +34,80 @@ class FavoritesScreen extends StatefulWidget {
 class _FavoritesScreenState extends State<FavoritesScreen> {
   late String _selectedTab = widget.initialTab;
 
+  /// Multi-select state for the Itineraries tab's bulk-delete flow.
+  /// `null` means selection mode is off; an empty-but-non-null set means
+  /// the user has long-pressed into selection mode without picking
+  /// anything yet.
+  Set<String>? _selectedItineraryIds;
+
+  bool get _isSelectingItineraries => _selectedItineraryIds != null;
+
   @override
   void initState() {
     super.initState();
     SavedPlacesService.instance.load();
     ItineraryService.instance.load();
+  }
+
+  void _enterItinerarySelection(String initialId) {
+    setState(() => _selectedItineraryIds = {initialId});
+  }
+
+  void _toggleItinerarySelection(String id) {
+    setState(() {
+      final ids = _selectedItineraryIds;
+      if (ids == null) return;
+      if (ids.contains(id)) {
+        ids.remove(id);
+      } else {
+        ids.add(id);
+      }
+      // Nothing left selected — exit selection mode entirely rather than
+      // leaving an empty-but-active selection bar on screen.
+      if (ids.isEmpty) _selectedItineraryIds = null;
+    });
+  }
+
+  void _cancelItinerarySelection() {
+    setState(() => _selectedItineraryIds = null);
+  }
+
+  Future<void> _confirmDeleteSelectedItineraries() async {
+    final ids = _selectedItineraryIds;
+    if (ids == null || ids.isEmpty) return;
+    final colors = AppColors.of(context);
+    final count = ids.length;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: colors.card,
+        title: Text(
+          'Delete $count itinerar${count == 1 ? 'y' : 'ies'}?',
+          style: TextStyle(color: colors.ink),
+        ),
+        content: Text(
+          'This will permanently delete the selected itinerar${count == 1 ? 'y' : 'ies'}. This cannot be undone.',
+          style: TextStyle(color: colors.ink.withValues(alpha: 0.8)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text('Cancel', style: TextStyle(color: colors.muted)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Color(0xFFE53935)),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await ItineraryService.instance.deleteItineraries(ids);
+      if (mounted) setState(() => _selectedItineraryIds = null);
+    }
   }
 
   @override
@@ -140,49 +209,70 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                       builder: (context, _) {
                         final itineraries =
                             ItineraryService.instance.itineraries;
+                        // Selected ids can go stale if an itinerary is
+                        // deleted from elsewhere while selection mode is
+                        // active (e.g. from the detail screen) — drop any
+                        // that no longer exist rather than showing a wrong
+                        // count.
+                        final validIds = itineraries.map((i) => i.id).toSet();
+                        final selectedIds = _selectedItineraryIds?.intersection(
+                          validIds,
+                        );
+                        if (_isSelectingItineraries &&
+                            selectedIds != _selectedItineraryIds) {
+                          _selectedItineraryIds = selectedIds;
+                        }
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const ItineraryCreateScreen(),
+                            if (_isSelectingItineraries)
+                              _ItinerarySelectionBar(
+                                colors: colors,
+                                selectedCount: selectedIds?.length ?? 0,
+                                onCancel: _cancelItinerarySelection,
+                                onDelete: _confirmDeleteSelectedItineraries,
+                              )
+                            else
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const ItineraryCreateScreen(),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 14),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
                                   ),
-                                );
-                              },
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 14),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 14,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: colors.forest,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
-                                    Icon(
-                                      Icons.add_rounded,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Add Itinerary',
-                                      style: TextStyle(
+                                  decoration: BoxDecoration(
+                                    color: colors.forest,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: const [
+                                      Icon(
+                                        Icons.add_rounded,
                                         color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w700,
+                                        size: 20,
                                       ),
-                                    ),
-                                  ],
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Add Itinerary',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
                             if (itineraries.isEmpty)
                               Padding(
                                 padding: const EdgeInsets.symmetric(
@@ -204,6 +294,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                                 (itinerary) => _ItineraryCard(
                                   colors: colors,
                                   itinerary: itinerary,
+                                  isSelecting: _isSelectingItineraries,
+                                  isSelected:
+                                      selectedIds?.contains(itinerary.id) ??
+                                      false,
+                                  onLongPress: () =>
+                                      _enterItinerarySelection(itinerary.id),
+                                  onToggleSelected: () =>
+                                      _toggleItinerarySelection(itinerary.id),
                                 ),
                               ),
                           ],
@@ -369,28 +467,64 @@ class _ItineraryCard extends StatelessWidget {
   final AppColors colors;
   final ItineraryModel itinerary;
 
-  const _ItineraryCard({required this.colors, required this.itinerary});
+  /// Whether Your Hub's Itineraries tab is currently in multi-select mode
+  /// (bulk-delete flow). While active, tapping the card toggles selection
+  /// instead of opening the detail screen, and a checkbox-style indicator
+  /// replaces the trailing chevron.
+  final bool isSelecting;
+  final bool isSelected;
+  final VoidCallback onLongPress;
+  final VoidCallback onToggleSelected;
+
+  const _ItineraryCard({
+    required this.colors,
+    required this.itinerary,
+    this.isSelecting = false,
+    this.isSelected = false,
+    required this.onLongPress,
+    required this.onToggleSelected,
+  });
 
   @override
   Widget build(BuildContext context) {
     final locations = ItineraryService.instance.resolveLocations(itinerary);
     return GestureDetector(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ItineraryDetailScreen(itineraryId: itinerary.id),
-          ),
-        );
-      },
+      onTap: isSelecting
+          ? onToggleSelected
+          : () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) =>
+                      ItineraryDetailScreen(itineraryId: itinerary.id),
+                ),
+              );
+            },
+      // Long-press enters bulk-select mode (spec Section 4) regardless of
+      // whether it's already active, so long-pressing a second card while
+      // selecting simply adds to the existing selection.
+      onLongPress: isSelecting ? onToggleSelected : onLongPress,
       child: Container(
         margin: const EdgeInsets.only(bottom: 11),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: colors.card,
           borderRadius: BorderRadius.circular(22),
+          border: isSelected
+              ? Border.all(color: colors.forest, width: 2)
+              : null,
         ),
         child: Row(
           children: [
+            if (isSelecting) ...[
+              Icon(
+                isSelected
+                    ? Icons.check_circle_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                color: isSelected ? colors.forest : colors.muted,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+            ],
             Container(
               width: 46,
               height: 46,
@@ -423,50 +557,128 @@ class _ItineraryCard extends StatelessWidget {
                 ],
               ),
             ),
-            GestureDetector(
-              onTap: locations.isEmpty
-                  ? null
-                  : () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => ItineraryNavigationOverviewScreen(
-                            itineraryName: itinerary.name,
-                            stops: List<LocationModel>.of(locations),
+            // "Navigate" button + chevron are hidden in selection mode —
+            // they're not meaningful actions while bulk-selecting, and
+            // hiding them keeps the row focused on the checkbox/tap-to-
+            // select interaction.
+            if (!isSelecting) ...[
+              GestureDetector(
+                onTap: locations.isEmpty
+                    ? null
+                    : () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => ItineraryNavigationOverviewScreen(
+                              itineraryName: itinerary.name,
+                              stops: List<LocationModel>.of(locations),
+                            ),
                           ),
-                        ),
-                      );
-                    },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
-                decoration: BoxDecoration(
-                  color: locations.isEmpty ? colors.line : colors.forest,
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.navigation_rounded,
-                      color: locations.isEmpty ? colors.muted : Colors.white,
-                      size: 15,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Navigate',
-                      style: TextStyle(
+                        );
+                      },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: locations.isEmpty ? colors.line : colors.forest,
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.navigation_rounded,
                         color: locations.isEmpty ? colors.muted : Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
+                        size: 15,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Text(
+                        'Navigate',
+                        style: TextStyle(
+                          color: locations.isEmpty
+                              ? colors.muted
+                              : Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 6),
-            Icon(Icons.chevron_right_rounded, color: colors.muted, size: 22),
+              const SizedBox(width: 6),
+              Icon(Icons.chevron_right_rounded, color: colors.muted, size: 22),
+            ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Contextual selection bar shown in place of the "Add Itinerary" button
+/// while Your Hub's Itineraries tab is in multi-select mode (spec Section
+/// 4): shows the current selection count and Cancel/Delete actions. This
+/// app has no `Scaffold.appBar` anywhere (every screen uses a hand-rolled
+/// header `Row` instead), so this swaps in as a replacement for that
+/// button rather than an actual AppBar, matching the rest of the app's
+/// convention.
+class _ItinerarySelectionBar extends StatelessWidget {
+  final AppColors colors;
+  final int selectedCount;
+  final VoidCallback onCancel;
+  final VoidCallback onDelete;
+
+  const _ItinerarySelectionBar({
+    required this.colors,
+    required this.selectedCount,
+    required this.onCancel,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: colors.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.forest.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '$selectedCount selected',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: colors.ink,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: onCancel,
+            child: Text('Cancel', style: TextStyle(color: colors.muted)),
+          ),
+          TextButton(
+            onPressed: selectedCount == 0 ? null : onDelete,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(
+                  Icons.delete_outline_rounded,
+                  size: 18,
+                  color: Color(0xFFE53935),
+                ),
+                SizedBox(width: 4),
+                Text('Delete', style: TextStyle(color: Color(0xFFE53935))),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1112,141 +1112,176 @@ class _NavigationScreenState extends State<NavigationScreen> {
     );
   }
 
-  /// Photo + name bottom sheet shown when a browse-mode location pin is
-  /// tapped (spec Section 5) — google_maps_flutter's `InfoWindow` is
-  /// text-only by design, so a photo can't be shown inline above the pin
-  /// the way `flutter_map`'s custom overlay widgets can. A bottom sheet
-  /// keeps the same "tap pin → see photo" outcome without depending on a
-  /// screen-coordinate conversion that would need to be recomputed on
-  /// every camera move (`GoogleMapController.getScreenCoordinate` is
-  /// async and has no continuous camera-move stream to drive it from).
-  void _showLocationPinSheet(LocationModel location) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: SizedBox(
-                  height: 120,
-                  width: double.infinity,
-                  child: LocationPhoto(
-                    imagePath: location.imageUrl,
-                    fallbackColor: AppTheme.forest.withValues(alpha: 0.5),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                location.name,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              // WiFi / Sockets amenity indicators (addendum spec 3 Section
-              // 2.2) — only rendered for Cafe locations, so the popup for
-              // standard historical sites/landmarks is untouched.
-              if (location.category == 'Cafe') ...[
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    _AmenityChip(
-                      icon: location.hasWifi ? Icons.wifi : Icons.wifi_off,
-                      label: location.hasWifi ? 'WiFi available' : 'No WiFi',
-                      available: location.hasWifi,
-                    ),
-                    const SizedBox(width: 8),
-                    _AmenityChip(
-                      icon: location.hasSockets ? Icons.power : Icons.power_off,
-                      label: location.hasSockets
-                          ? 'Sockets available'
-                          : 'No sockets',
-                      available: location.hasSockets,
-                    ),
-                  ],
-                ),
-              ],
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  _openLocationDetails(location);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.forest,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('View details'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  /// Nudges the camera so a just-tapped pin isn't covered by the centered
+  /// "View details" dialog about to open on top of it (spec Section 2).
+  /// Re-centers on the pin first (`scrollBy` is a relative screen-pixel
+  /// offset, so it needs a known starting alignment to behave the same
+  /// regardless of where the pin was on screen when tapped), then shifts
+  /// the map content up so the pin lands in the upper third of the
+  /// visible map, clear of the dialog's vertical center. Relying on the
+  /// dialog's edges alone wouldn't be reliable — a pin tapped near screen
+  /// center could still end up hidden behind it.
+  void _nudgeCameraForDialog(LatLng pinPosition) {
+    _mapController?.animateCamera(CameraUpdate.newLatLng(pinPosition));
+    _mapController?.animateCamera(CameraUpdate.scrollBy(0, 160));
   }
 
-  /// Bottom sheet for the active navigation target's own marker. Shows a
-  /// photo when available and a "View details" action only when this
-  /// target has a real catalogued [LocationModel] behind it — a
-  /// Transport & Access pickup point has neither.
-  void _showNavTargetPinSheet(NavTarget target) {
-    showModalBottomSheet(
+  /// Centered "View details" dialog shown when a browse-mode location pin
+  /// is tapped (spec Section 2). Uses the same `Dialog` shell as the
+  /// existing `_showReceiptDialog` in `transport_access_section.dart`
+  /// (rounded corners, `insetPadding`, scrollable min-size column) so it
+  /// centers on screen and adapts across screen sizes, replacing the
+  /// previous bottom sheet, which always docked to the bottom edge
+  /// regardless of where the pin was tapped.
+  void _showLocationPinSheet(LocationModel location) {
+    _nudgeCameraForDialog(location.coordinates);
+    showDialog(
       context: context,
-      builder: (context) => SafeArea(
+      builder: (context) => Dialog(
+        backgroundColor: AppTheme.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 80),
         child: Padding(
           padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (target.imagePath != null) ...[
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(14),
                   child: SizedBox(
                     height: 120,
                     width: double.infinity,
                     child: LocationPhoto(
-                      imagePath: target.imagePath!,
+                      imagePath: location.imageUrl,
                       fallbackColor: AppTheme.forest.withValues(alpha: 0.5),
                     ),
                   ),
                 ),
                 const SizedBox(height: 14),
-              ],
-              Text(
-                target.name,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
+                Text(
+                  location.name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-              ),
-              if (target.sourceLocation != null) ...[
+                // WiFi / Sockets amenity indicators (addendum spec 3
+                // Section 2.2) — only rendered for Cafe locations, so the
+                // popup for standard historical sites/landmarks is
+                // untouched.
+                if (location.category == 'Cafe') ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      _AmenityChip(
+                        icon: location.hasWifi ? Icons.wifi : Icons.wifi_off,
+                        label: location.hasWifi ? 'WiFi available' : 'No WiFi',
+                        available: location.hasWifi,
+                      ),
+                      const SizedBox(width: 8),
+                      _AmenityChip(
+                        icon: location.hasSockets
+                            ? Icons.power
+                            : Icons.power_off,
+                        label: location.hasSockets
+                            ? 'Sockets available'
+                            : 'No sockets',
+                        available: location.hasSockets,
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 12),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    _openLocationDetails(target.sourceLocation!);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.forest,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _openLocationDetails(location);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.forest,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('View details'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Centered dialog for the active navigation target's own marker (spec
+  /// Section 2) — same treatment as [_showLocationPinSheet]. Shows a
+  /// photo when available and a "View details" action only when this
+  /// target has a real catalogued [LocationModel] behind it — a
+  /// Transport & Access pickup point has neither.
+  void _showNavTargetPinSheet(NavTarget target) {
+    _nudgeCameraForDialog(target.coordinates);
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: AppTheme.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 80),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (target.imagePath != null) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: SizedBox(
+                      height: 120,
+                      width: double.infinity,
+                      child: LocationPhoto(
+                        imagePath: target.imagePath!,
+                        fallbackColor: AppTheme.forest.withValues(alpha: 0.5),
+                      ),
                     ),
                   ),
-                  child: const Text('View details'),
+                  const SizedBox(height: 14),
+                ],
+                Text(
+                  target.name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
+                if (target.sourceLocation != null) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        _openLocationDetails(target.sourceLocation!);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.forest,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('View details'),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
