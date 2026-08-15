@@ -70,10 +70,13 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
   RouteResult? _route;
   String? _routeError;
 
-  /// Whether the non-map POI list fallback is being shown — available any
-  /// time (toggle button), and shown automatically if the map fails to
-  /// load, so the rest of the demo (POI browsing, photos) still works.
-  bool _showListFallback = false;
+  /// Whether the non-map POI list fallback is being shown — this is a
+  /// failsafe only, shown automatically if the map fails to load, so POI
+  /// browsing/photos keep working even without a map. There is no manual
+  /// toggle for it: a standalone "list of locations" view was removed
+  /// from this page since it duplicated location browsing already
+  /// available elsewhere in the app (Home / Plans).
+  bool get _showListFallback => _mapState == _MapLoadState.failed;
 
   @override
   void initState() {
@@ -210,7 +213,12 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
   void _startTurnByTurn() {
     final end = _endPoi;
     if (end == null) return;
-    NavFlowLauncher.startWithTarget(
+    // Uses [NavFlowLauncher.startTurnByTurn] rather than
+    // [NavFlowLauncher.startWithTarget]: this button's label already
+    // says "turn-by-turn navigation", so asking the user to then choose
+    // between bird's-eye and turn-by-turn would be a redundant,
+    // nonsensical extra step — go straight into turn-by-turn.
+    NavFlowLauncher.startTurnByTurn(
       context,
       target: NavTarget(
         name: end.name,
@@ -338,23 +346,19 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
         backgroundColor: colors.paper,
         foregroundColor: colors.ink,
         elevation: 0,
-        actions: [
-          if (_poiState == _PoiLoadState.loaded)
-            IconButton(
-              icon: Icon(
-                _showListFallback ? Icons.map_outlined : Icons.list_rounded,
-              ),
-              tooltip: _showListFallback ? 'Show map' : 'Show list',
-              onPressed: () =>
-                  setState(() => _showListFallback = !_showListFallback),
-            ),
-        ],
       ),
       body: Column(
         children: [
           Expanded(child: _buildMapArea(colors)),
-          if (!_showListFallback || _mapState != _MapLoadState.failed)
-            _buildRoutePickerPanel(colors),
+          // Preserves the original screen's behavior exactly: the route
+          // picker panel was always shown regardless of map/list-fallback
+          // state before this change (the old condition
+          // `!_showListFallback || _mapState != _MapLoadState.failed` was
+          // always true in practice, since the now-removed manual list
+          // toggle was the only way `_showListFallback` could be true
+          // while the map hadn't failed) — removing the manual toggle
+          // must not incidentally change when this panel appears.
+          _buildRoutePickerPanel(colors),
         ],
       ),
     );
@@ -374,7 +378,7 @@ class _OsmPoiMapScreenState extends State<OsmPoiMapScreen> {
     // Map failed to load (missing/invalid key, no Play Services, etc.) —
     // show the graceful fallback instead of a blank screen/crash. POI data
     // and photos remain accessible via the list view either way.
-    if (_mapState == _MapLoadState.failed || _showListFallback) {
+    if (_showListFallback) {
       return _PoiListFallback(
         pois: _pois,
         mapUnavailable: _mapState == _MapLoadState.failed,

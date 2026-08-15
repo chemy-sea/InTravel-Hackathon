@@ -17,10 +17,11 @@ import '../services/live_tracking_activation_service.dart';
 import '../services/location_service.dart';
 import '../services/walking_path_service.dart';
 import '../services/accessibility_settings_service.dart';
+import '../utils/category_colors.dart';
+import '../utils/reroute_utils.dart';
 import '../widgets/location_photo.dart';
 import 'location_details_screen.dart';
 import 'osm_poi_map_screen.dart';
-import 'favorites_screen.dart';
 
 /// Navigation screen. Visual language (route-card overlay, recenter button,
 /// Live Updates list, black accessibility-mode pills) is ported from the
@@ -213,6 +214,58 @@ class _NavigationScreenState extends State<NavigationScreen> {
   /// debug-console logging in [OpenRouteServiceRouting] and here.
   String? _realRouteFailureReason;
 
+  // ─── Smart re-routing (improvement-batch: Smart Re-Routing) ───────────
+  // On top of the existing off-route *detection* above, this adds the
+  // actual *reaction*: automatically recalculating a fresh route from the
+  // user's current (deviated) position the moment they stray, comparing
+  // its duration against the route it replaced, and — only when no
+  // forward path exists at all, from either the real routing service or
+  // the static walking-path graph fallback — surfacing a "turn around"
+  // suggestion as the last resort. Mirrors Google/Apple Maps' behavior on
+  // a wrong turn: reroute first, always; suggest reversing course only
+  // when there's genuinely no way forward from here.
+
+  /// Duration (seconds) of the route currently being followed, updated
+  /// every time [_fetchRealRoute] succeeds (initial fetch or a later
+  /// reroute) — this is the "before" value a subsequent reroute's
+  /// duration gets compared against to compute the "N min slower/faster"
+  /// notice.
+  double? _lastRouteDurationSeconds;
+
+  /// True while an automatic reroute triggered by [_attemptAutoReroute] is
+  /// in flight, so a "Recalculating route…" state can be shown and
+  /// concurrent reroute attempts (e.g. several GPS ticks arriving while
+  /// still off-route) are suppressed.
+  bool _isAutoRerouting = false;
+
+  /// Signed duration difference (new minus previous, seconds) once an
+  /// automatic reroute completes successfully — positive means the new
+  /// route is slower, negative means it's faster. `null` when there's no
+  /// reroute result to show yet, no prior duration to compare against, or
+  /// the difference was negligible (<30s, below this app's minute-
+  /// granularity duration formatting elsewhere).
+  double? _rerouteDurationDeltaSeconds;
+
+  /// True only when an automatic reroute attempt found *no* forward path
+  /// at all — neither the real routing service nor the static
+  /// walking-path graph fallback could connect the user's current
+  /// position to the destination — meaning retracing steps (a U-turn) is
+  /// the only way to get back onto any walkable path.
+  bool _suggestUTurn = false;
+
+  /// Monotonically increasing tag for the current
+  /// [_rerouteDurationDeltaSeconds] notice, so its delayed auto-dismiss
+  /// (see [_recordRouteDuration]) only clears the notice it was scheduled
+  /// for — not a newer one that replaced it in the meantime.
+  int _rerouteNoticeGeneration = 0;
+
+  /// When the last automatic reroute attempt happened (successful or
+  /// not), so [_maybeAutoReroute] can rate-limit retries while the user
+  /// remains off-route — without this, every ~5m GPS update (this
+  /// screen's position-stream granularity) would fire another network
+  /// request for as long as someone stays off-route.
+  DateTime? _lastAutoRerouteAttemptAt;
+
   // ─── Distinct per-view-mode camera behavior ────────────────────────────
   // Bird's-eye and turn-by-turn deliberately do NOT share camera logic:
   // bird's-eye fits both the route start and destination once and then
@@ -361,7 +414,21 @@ class _NavigationScreenState extends State<NavigationScreen> {
         // newly fetched real route on the next build instead of
         // continuing to serve the previously cached fallback line.
         _cachedRouteLine = null;
+        // Compare this route's duration against whichever route it just
+        // replaced (see [_attemptAutoReroute]) before overwriting the
+        // "last known" value with this fetch's own duration — this is
+        // the only place a real route's duration is available at all, so
+        // it's also where the "N min slower/faster" reroute notice gets
+        // computed.
+        _rerouteDurationDeltaSeconds = computeRerouteDurationDelta(
+          previousDurationSeconds: _lastRouteDurationSeconds,
+          newDurationSeconds: result.durationSeconds,
+        );
+        _lastRouteDurationSeconds = result.durationSeconds;
       });
+      if (_rerouteDurationDeltaSeconds != null) {
+        _scheduleRerouteNoticeDismiss();
+      }
     } catch (e) {
       // Leave _realRouteWaypoints as-is (null, or a previous route) —
       // _buildRouteLine's fallback chain handles this gracefully. This
@@ -705,6 +772,14 @@ class _NavigationScreenState extends State<NavigationScreen> {
       _nextWaypointIndex = 1;
       _isOffRoute = false;
       _realRouteFailureReason = null;
+      // A gate switch is picking a different starting point outright,
+      // not a "wrong turn" recalculation — so none of the smart-
+      // rerouting notice/suggestion state from whatever gate was
+      // previously selected should carry over onto the new one.
+      _lastRouteDurationSeconds = null;
+      _rerouteDurationDeltaSeconds = null;
+      _suggestUTurn = false;
+      _isAutoRerouting = false;
       // Allow bird's-eye to re-fit its bounds to the new start/destination
       // pair instead of staying framed on the old gate.
       _hasFitBirdsEyeBounds = false;
@@ -998,18 +1073,6 @@ class _NavigationScreenState extends State<NavigationScreen> {
         .getAllLocations()
         .where((site) => wanted.contains(site.category))
         .toList();
-  }
-
-  /// Opens the Itinerary Hub (Your Hub → Itineraries tab) directly from
-  /// the Navigation screen's filter row, so saved itineraries aren't only
-  /// reachable through Settings → Saved Places, which buried them behind
-  /// an extra navigation step.
-  void _openItinerariesHub() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const FavoritesScreen(initialTab: 'Itineraries'),
-      ),
-    );
   }
 
   // ─── Marker building (native GoogleMap Marker/InfoWindow) ─────────────────
@@ -1348,26 +1411,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
     );
   }
 
-  double _getCategoryMarkerHue(String category) {
-    switch (category) {
-      case 'Fortifications':
-        return BitmapDescriptor.hueRed;
-      case 'Landmarks':
-        return BitmapDescriptor.hueOrange;
-      case 'Schools':
-        return BitmapDescriptor.hueYellow;
-      case 'Parks':
-        return BitmapDescriptor.hueGreen;
-      case 'Cafe':
-        // addendum spec 3 Section 2.1 — matches [_getCafeMarkerHue], kept
-        // here too so any caller that reaches Cafe sites through this
-        // shared helper (rather than the independent [_cafeFilteredLocations]
-        // path) still renders a distinct, consistent pin color.
-        return BitmapDescriptor.hueMagenta;
-      default:
-        return BitmapDescriptor.hueAzure;
-    }
-  }
+  double _getCategoryMarkerHue(String category) => categoryPinHue(category);
 
   double _getMarkerHue(AccessibilityType type) {
     switch (type) {
@@ -1755,6 +1799,146 @@ class _NavigationScreenState extends State<NavigationScreen> {
     if (nowOffRoute != _isOffRoute) {
       setState(() => _isOffRoute = nowOffRoute);
     }
+    if (nowOffRoute) {
+      // Fire-and-forget: attempts its own rate-limiting/dedup internally
+      // (see [_lastAutoRerouteAttemptAt] / [_isAutoRerouting]) and calls
+      // setState itself once it resolves, exactly like [_fetchRealRoute]
+      // above — safe to call unconditionally on every off-route tick.
+      _maybeAutoReroute(userPoint);
+    }
+  }
+
+  /// Automatically recalculates the route from [userPoint] once the user
+  /// has strayed off the original line — the actual "smart" reaction to
+  /// the deviation [_checkOffRoute] only detects. Always tries to find a
+  /// forward path first (real routing service, then the static
+  /// walking-path graph): only when *both* of those fail to connect
+  /// [userPoint] to the destination does this fall back to suggesting a
+  /// U-turn, since retracing steps is the last resort, not the default
+  /// reaction to a wrong turn.
+  Future<void> _maybeAutoReroute(LatLng userPoint) async {
+    if (_isAutoRerouting || _navTarget == null) return;
+    final now = DateTime.now();
+    final last = _lastAutoRerouteAttemptAt;
+    // Rate-limit: don't refire on every ~5m GPS tick while the user
+    // remains off-route (e.g. still walking away, or standing still past
+    // the threshold) — a real reroute attempt already committed to a
+    // new [_routeStartPosition], so nothing meaningful changes again
+    // until enough time/movement has passed to be worth another network
+    // round-trip.
+    if (last != null && now.difference(last) < const Duration(seconds: 8)) {
+      return;
+    }
+    _lastAutoRerouteAttemptAt = now;
+    _isAutoRerouting = true;
+    if (mounted) setState(() {});
+
+    final destination = _navTarget!.coordinates;
+    var foundForwardPath = false;
+    try {
+      // Real routing service first — the same one [_fetchRealRoute] uses
+      // — so a successful reroute produces genuine turn-by-turn steps,
+      // not just a redrawn line.
+      final result = await _routingService.getWalkingRoute(
+        ll.LatLng(userPoint.latitude, userPoint.longitude),
+        ll.LatLng(destination.latitude, destination.longitude),
+      );
+      if (!mounted) return;
+      foundForwardPath = true;
+      setState(() {
+        _routeStartPosition = userPoint;
+        _realRouteWaypoints = result.points
+            .map((p) => LatLng(p.latitude, p.longitude))
+            .toList();
+        _realRouteSteps = result.steps;
+        _currentStepIndex = 0;
+        _realRouteFetchedForStart = userPoint;
+        _realRouteFailureReason = null;
+        _cachedRouteLine = null;
+        _nextWaypointIndex = 1;
+        _isOffRoute = false;
+        _suggestUTurn = false;
+        _rerouteDurationDeltaSeconds = computeRerouteDurationDelta(
+          previousDurationSeconds: _lastRouteDurationSeconds,
+          newDurationSeconds: result.durationSeconds,
+        );
+        _lastRouteDurationSeconds = result.durationSeconds;
+      });
+      if (_rerouteDurationDeltaSeconds != null) {
+        _scheduleRerouteNoticeDismiss();
+      }
+    } on RoutingException catch (e) {
+      // The real service found no forward route at all (as opposed to a
+      // transient network/rate-limit failure) — still worth trying the
+      // static walking-path graph before giving up on a forward path
+      // entirely, since it covers Intramuros' walkways independently of
+      // ORS availability.
+      if (e.type == RoutingErrorType.noRoute) {
+        final graphPath = WalkingPathService().findPath(userPoint, destination);
+        if (graphPath != null && mounted) {
+          foundForwardPath = true;
+          setState(() {
+            _routeStartPosition = userPoint;
+            _realRouteWaypoints = null;
+            _realRouteFetchedForStart = userPoint;
+            _realRouteSteps = const [];
+            _currentStepIndex = 0;
+            _realRouteFailureReason = e.message;
+            _cachedRouteLine = null;
+            _nextWaypointIndex = 1;
+            _isOffRoute = false;
+            _suggestUTurn = false;
+            // No real route means no real duration to compare either —
+            // clear any pending notice rather than show a stale delta
+            // against a fallback-graph route.
+            _rerouteDurationDeltaSeconds = null;
+          });
+        }
+      } else {
+        // Network/rate-limit/key failure: not a "no forward path" signal
+        // by itself, so this must not trigger the U-turn suggestion —
+        // _buildRouteLine's own fallback chain (static graph → straight
+        // line) still applies on the next build via the unchanged
+        // _routeStartPosition, same as any other real-route failure.
+        if (mounted) {
+          setState(() => _realRouteFailureReason = e.message);
+        }
+        foundForwardPath =
+            WalkingPathService().findPath(userPoint, destination) != null;
+      }
+    } catch (_) {
+      foundForwardPath =
+          WalkingPathService().findPath(userPoint, destination) != null;
+    } finally {
+      _isAutoRerouting = false;
+      // The catch blocks above already tried the static walking-path
+      // graph before setting `foundForwardPath`, so by this point it
+      // reflects whether *either* source found a way forward — feeding
+      // both outcomes through the shared decision helper keeps this in
+      // sync with [shouldSuggestUTurn]'s own doc'd semantics rather than
+      // re-deriving the same "neither source worked" check inline.
+      final suggestUTurnNow = shouldSuggestUTurn(
+        realRouteFoundForwardPath: foundForwardPath,
+        fallbackGraphFoundForwardPath: foundForwardPath,
+      );
+      if (mounted) {
+        setState(() => _suggestUTurn = suggestUTurnNow);
+      }
+    }
+  }
+
+  /// Auto-dismisses the "N min slower/faster" reroute notice after a
+  /// short delay so it doesn't linger indefinitely over the trip-info
+  /// card. Tagged with [_rerouteNoticeGeneration] so a newer reroute's
+  /// notice (or the user reaching the destination) isn't accidentally
+  /// cleared by an older timer that was already scheduled.
+  void _scheduleRerouteNoticeDismiss() {
+    final generation = ++_rerouteNoticeGeneration;
+    Future.delayed(const Duration(seconds: 8), () {
+      if (mounted && generation == _rerouteNoticeGeneration) {
+        setState(() => _rerouteDurationDeltaSeconds = null);
+      }
+    });
   }
 
   /// "Return to route": re-anchors the route line to the user's effective
@@ -1770,6 +1954,17 @@ class _NavigationScreenState extends State<NavigationScreen> {
       _routeStartPosition = userPoint;
       _nextWaypointIndex = 1;
       _currentStepIndex = 0;
+      // A manual recenter is the user explicitly asking for a fresh
+      // route from here — same intent as the automatic reroute, so it
+      // shares the same "no forward path found" outcome: clear it now
+      // and let the next real-route fetch (triggered by the
+      // _routeStartPosition change above) or [_maybeAutoReroute] call
+      // set it again if the new position turns out to be truly
+      // unreachable too. Any pending "N min slower/faster" notice from an
+      // earlier reroute is stale the moment the user manually recenters,
+      // so it's cleared here too.
+      _suggestUTurn = false;
+      _rerouteDurationDeltaSeconds = null;
       if (_isTurnByTurn) {
         _followUserIfTurnByTurn(userPoint);
       } else {
@@ -1951,7 +2146,6 @@ class _NavigationScreenState extends State<NavigationScreen> {
                       categories: _navFilterCategories,
                       activeCategories: _activeCategoryFilters,
                       onToggle: _toggleCategoryFilter,
-                      onOpenItineraries: _openItinerariesHub,
                     ),
                   ],
                 ),
@@ -2345,45 +2539,114 @@ class _NavigationScreenState extends State<NavigationScreen> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          // Off-route nudge folded into this card as a third line rather
-          // than living in its own banner, keeping it visible without
-          // adding more floating chrome over the map.
-          if (_isOffRoute) ...[
-            const SizedBox(height: 9),
-            GestureDetector(
-              onTap: _recenterOnRoute,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 7,
+          // Route-status nudge folded into this card as a third line
+          // rather than living in its own banner, keeping it visible
+          // without adding more floating chrome over the map. Exactly one
+          // of these shows at a time, in priority order: a "no forward
+          // path" U-turn suggestion (the rare last-resort case) outranks
+          // an in-flight recalculation, which outranks a just-completed
+          // reroute's time-difference notice, which outranks the plain
+          // "still off route" nudge shown in the brief window before
+          // smart re-routing's automatic attempt kicks in (see
+          // [_maybeAutoReroute]'s rate-limit).
+          ..._buildRouteStatusChip(colors),
+        ],
+      ),
+    );
+  }
+
+  /// Builds the (at most one) route-status chip described above —
+  /// returns an empty list when there's nothing to show, so callers can
+  /// splice it directly into a `Column`'s children via `...`.
+  List<Widget> _buildRouteStatusChip(AppColors colors) {
+    List<Widget> chip({
+      required IconData icon,
+      required String label,
+      required Color color,
+      VoidCallback? onTap,
+      bool spinning = false,
+    }) {
+      final content = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(9),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (spinning)
+              const SizedBox(
+                width: 13,
+                height: 13,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
                 ),
-                decoration: BoxDecoration(
-                  color: colors.forest,
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Icon(Icons.sync_rounded, size: 13, color: Colors.white),
-                    SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'Off route — tap to recenter',
-                        style: TextStyle(
-                          fontSize: 10.5,
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+              )
+            else
+              Icon(icon, size: 13, color: Colors.white),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
           ],
-        ],
-      ),
-    );
+        ),
+      );
+      return [
+        const SizedBox(height: 9),
+        onTap != null ? GestureDetector(onTap: onTap, child: content) : content,
+      ];
+    }
+
+    if (_suggestUTurn) {
+      return chip(
+        icon: Icons.u_turn_left_rounded,
+        label: 'No path forward — turn back to rejoin the route',
+        color: const Color(0xFFB25E00),
+        onTap: () {
+          final userPoint = _effectiveUserLatLng;
+          if (userPoint != null) _maybeAutoReroute(userPoint);
+        },
+      );
+    }
+    if (_isAutoRerouting) {
+      return chip(
+        icon: Icons.sync_rounded,
+        label: 'Recalculating route…',
+        color: colors.forest,
+        spinning: true,
+      );
+    }
+    final delta = _rerouteDurationDeltaSeconds;
+    if (delta != null) {
+      final minutes = rerouteDeltaMinutes(delta);
+      final slower = delta > 0;
+      return chip(
+        icon: slower ? Icons.schedule_rounded : Icons.bolt_rounded,
+        label: slower
+            ? 'Rerouted — $minutes min slower'
+            : 'Rerouted — $minutes min faster',
+        color: colors.forest,
+        onTap: () => setState(() => _rerouteDurationDeltaSeconds = null),
+      );
+    }
+    if (_isOffRoute) {
+      return chip(
+        icon: Icons.sync_rounded,
+        label: 'Off route — tap to recenter',
+        color: colors.forest,
+        onTap: _recenterOnRoute,
+      );
+    }
+    return const [];
   }
 
   // ─── Shared "Live Updates" / "Accessibility Modes" panel ──────────────────
@@ -2828,14 +3091,12 @@ class _NavFilterChipRow extends StatelessWidget {
   final List<String> categories;
   final Set<String> activeCategories;
   final ValueChanged<String> onToggle;
-  final VoidCallback onOpenItineraries;
 
   const _NavFilterChipRow({
     required this.colors,
     required this.categories,
     required this.activeCategories,
     required this.onToggle,
-    required this.onOpenItineraries,
   });
 
   @override
@@ -2846,52 +3107,49 @@ class _NavFilterChipRow extends StatelessWidget {
       height: 34,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        // +1 for the leading "Itineraries" entry point, kept in the same
-        // scrollable row as the category filter chips per design so it
-        // reads as sitting alongside Fortifications/Landmarks/Schools/
-        // Parks rather than as a separate control below them. Placed
-        // first in the row (per updated order: Itineraries, then
-        // Fortifications/Landmarks/Schools/Parks).
-        itemCount: categories.length + 1,
+        // The leading "Itineraries" entry point that used to live here
+        // was removed: it duplicated the same Itinerary Hub already
+        // reachable from Your Hub / Settings, so this row is now just
+        // the category filter chips (Fortifications/Landmarks/Schools/
+        // Parks).
+        itemCount: categories.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          if (index == 0) {
-            return GestureDetector(
-              onTap: onOpenItineraries,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: colors.forest,
-                  borderRadius: BorderRadius.circular(25),
-                ),
-                child: const Text(
-                  'Itineraries',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            );
-          }
-          final category = categories[index - 1];
+          final category = categories[index];
           final isActive = activeCategories.contains(category);
+          // Single source of truth (lib/utils/category_colors.dart):
+          // this is the exact same hue the corresponding map pins render
+          // with, converted to an RGB color — so a chip always visually
+          // matches its pins, and changing a pin's color there
+          // automatically updates the chip here too.
+          final categoryColor = categoryChipColor(category);
+          // Pick a readable foreground against the filled/active state's
+          // solid categoryColor background: some category colors (e.g.
+          // Schools' yellow) are too light for white text to read
+          // clearly, so this falls back to a dark foreground for light
+          // background colors instead of assuming white always works.
+          final activeForeground =
+              ThemeData.estimateBrightnessForColor(categoryColor) ==
+                  Brightness.light
+              ? const Color(0xFF262626)
+              : Colors.white;
           return GestureDetector(
             onTap: () => onToggle(category),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14),
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: isActive
-                    ? (isDark ? colors.accent : const Color(0xFF1D6B4A))
-                    : colors.card,
+                color: isActive ? categoryColor : colors.card,
                 borderRadius: BorderRadius.circular(25),
                 border: Border.all(
+                  // Inactive chips get a colored border matching their
+                  // pin color (rather than a neutral gray) so the
+                  // category-to-pin association is visible even before
+                  // the filter is toggled on.
                   color: isActive
-                      ? (isDark ? colors.accent : const Color(0xFF1D6B4A))
-                      : (isDark ? colors.line : const Color(0xFFE5E7EB)),
+                      ? categoryColor
+                      : categoryColor.withValues(alpha: isDark ? 0.55 : 0.45),
+                  width: isActive ? 1 : 1.4,
                 ),
                 boxShadow: isActive
                     ? null
@@ -2906,11 +3164,25 @@ class _NavFilterChipRow extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // A small colored dot on inactive chips reinforces the
+                  // pin-color association without relying solely on the
+                  // (necessarily lighter, for legibility) border tint.
+                  if (!isActive) ...[
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: categoryColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
                   if (isActive) ...[
-                    const Icon(
+                    Icon(
                       Icons.check_rounded,
                       size: 13,
-                      color: Colors.white,
+                      color: activeForeground,
                     ),
                     const SizedBox(width: 5),
                   ],
@@ -2919,11 +3191,9 @@ class _NavFilterChipRow extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
-                      color: isDark
-                          ? Colors.white
-                          : (isActive
-                                ? const Color(0xFFF7FFFF)
-                                : const Color(0xFF555555)),
+                      color: isActive
+                          ? activeForeground
+                          : (isDark ? Colors.white : const Color(0xFF555555)),
                     ),
                   ),
                 ],

@@ -11,6 +11,7 @@ import 'services/gate_selection_service.dart';
 import 'services/itinerary_service.dart';
 import 'services/review_service.dart';
 import 'services/chatbot_visibility_service.dart';
+import 'services/chatbot_handle_position_service.dart';
 
 /// App-wide [Navigator] key so widgets mounted outside the Navigator's
 /// subtree (e.g. [ChatbotSideHandle], via [MaterialApp.builder]) can still
@@ -36,6 +37,7 @@ void main() {
   ItineraryService.instance.load();
   ReviewService.instance.load();
   ChatbotVisibilityService.instance.load();
+  ChatbotHandlePositionService.instance.load();
 
   runApp(const InTravelApp());
 }
@@ -63,12 +65,7 @@ class InTravelApp extends StatelessWidget {
             // the Navigator's own subtree (see chatbot_side_handle.dart)
             // so it persists, unchanged, across every page's push/pop
             // instead of being torn down and rebuilt per-screen.
-            return Stack(
-              children: [
-                ?child,
-                const ChatbotSideHandle(),
-              ],
-            );
+            return Stack(children: [?child, const ChatbotSideHandle()]);
           },
         );
       },
