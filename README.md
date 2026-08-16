@@ -45,6 +45,8 @@ A Flutter app that helps visitors explore Intramuros, Manila on foot — pick yo
    flutter clean && flutter run
    ```
 
+App can also be installed via apk found in "APP RELEASE APK"
+
 None of these keys are ever committed — `env.json` and `android/local.properties` are both gitignored; only the `.example` templates are tracked.
 
 ## Known Limitations
